@@ -348,4 +348,65 @@ internal class CachedSourceTest {
         Assert.assertEquals(listOf(1, 3), collected2)
     }
 
+    @Test
+    fun `FromCache CACHED_THEN_LOAD + no cache + 1 success = Load`() = runTest {
+        val collected = mutableListOf<Int>()
+        var exception = false
+        val sourceInvocationCnt = AtomicInteger()
+        val source = CachedSource<Unit, Int>(source = {
+            if (sourceInvocationCnt.incrementAndGet() == 1) {
+                1
+            } else {
+                throw RuntimeException()
+            }
+        })
+        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+            .catch { exception = true }
+            .collect {
+                collected += it
+            }
+        Assert.assertFalse(exception)
+        Assert.assertEquals(listOf(1), collected)
+    }
+
+    @Test
+    fun `FromCache CACHED_THEN_LOAD + no cache + success + failure + success = Load + catch + cache + load`() = runTest {
+        val collected1 = mutableListOf<Int>()
+        val collected2 = mutableListOf<Int>()
+        val collected3 = mutableListOf<Int>()
+        var exception1 = false
+        var exception2 = false
+        var exception3 = false
+        val sourceInvocationCnt = AtomicInteger()
+        val source = CachedSource<Unit, Int>(source = {
+            val cnt = sourceInvocationCnt.incrementAndGet()
+            if (cnt % 2 == 1) {
+                cnt
+            } else {
+                throw RuntimeException()
+            }
+        })
+        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+            .catch { exception1 = true }
+            .collect {
+                collected1 += it
+            }
+        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+            .catch { exception2 = true }
+            .collect {
+                collected2 += it
+            }
+        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+            .catch { exception3 = true }
+            .collect {
+                collected3 += it
+            }
+        Assert.assertFalse(exception1)
+        Assert.assertTrue(exception2)
+        Assert.assertFalse(exception3)
+        Assert.assertEquals(listOf(1), collected1)
+        Assert.assertEquals(listOf(1), collected2)
+        Assert.assertEquals(listOf(1, 3), collected3)
+    }
+
 }

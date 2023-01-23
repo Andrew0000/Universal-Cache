@@ -34,10 +34,9 @@ internal class CachedSourceWithMultipleParamsTest {
         var collected1 = -1
         var collected2 = -1
         var collected3 = -1
-        val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<String, Int>(source = {
-            delay(200)
-            sourceInvocationCnt.incrementAndGet()
+            delay(100)
+            it.toInt()
         })
         val a1 = async {
             source.get("1", fromCache = FromCache.NEVER, CacheRequirement())
