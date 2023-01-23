@@ -3,6 +3,7 @@ package crocodile8.universal_cache
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Before
@@ -129,4 +130,51 @@ internal class CachedSourceTest {
         Assert.assertEquals(2, collected5)
         Assert.assertEquals(2, collected6)
     }
+
+    @Test
+    fun `FromCache IF_FAILED + 1 success`() = runTest {
+        var collected = -1
+        val source = CachedSource<Unit, Int>(source = { 1 })
+        source.get(Unit, fromCache = FromCache.IF_FAILED, CacheRequirement())
+            .collect {
+                println("collect in test: $it")
+                collected = it
+            }
+        Assert.assertEquals(1, collected)
+    }
+
+    @Test
+    fun `FromCache IF_FAILED + 1 failure = Catch exception`() = runTest {
+        var collected = -1
+        val source = CachedSource<Unit, Int>(source = { throw RuntimeException() })
+        source.get(Unit, fromCache = FromCache.IF_FAILED, CacheRequirement())
+            .catch { collected = 2 }
+            .collect {
+                collected = it
+            }
+        Assert.assertEquals(2, collected)
+    }
+
+    @Test
+    fun `FromCache IF_FAILED + 1 success + 1 failure = Get cached`() = runTest {
+        var collected = -1
+        val sourceInvocationCnt = AtomicInteger()
+        val source = CachedSource<Unit, Int>(source = {
+            if (sourceInvocationCnt.incrementAndGet() == 1) {
+                1
+            } else {
+                throw RuntimeException()
+            }
+        })
+        source.get(Unit, fromCache = FromCache.IF_FAILED, CacheRequirement())
+            .collect {
+                // It's warm-up call
+            }
+        source.get(Unit, fromCache = FromCache.IF_FAILED, CacheRequirement())
+            .collect {
+                collected = it
+            }
+        Assert.assertEquals(1, collected)
+    }
+
 }

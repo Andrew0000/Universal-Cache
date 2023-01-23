@@ -27,6 +27,8 @@ class Requester<P : Any, T : Any>(
                 val scope = CoroutineScope(Dispatchers.IO) // CoroutineScope(Dispatchers.IO + SupervisorJob())
                 ongoingFlow =
                     flow { emit(source(params)) }
+                    .map { Result.success(it) }
+                    .catch { emit(Result.failure(it)) }
                     .onCompletion {
                         ongoingsLock.withLock {
                             ongoings.remove(params)
@@ -39,6 +41,14 @@ class Requester<P : Any, T : Any>(
                         1
                     )
                     .take(1)
+                    // Shared flow doesn't throw exceptions so wrap and re-throw possible exceptions
+                    .map {
+                        if (it.isSuccess) {
+                            it.getOrThrow()
+                        } else {
+                            throw it.exceptionOrNull()!!
+                        }
+                    }
                 ongoings[params] = ongoingFlow
             }
             ongoingFlow
