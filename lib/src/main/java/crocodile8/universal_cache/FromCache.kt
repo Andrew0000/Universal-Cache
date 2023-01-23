@@ -5,4 +5,5 @@ enum class FromCache {
     NEVER,
     IF_FAILED,
     IF_HAVE,
+    CACHED_THEN_LOAD,
 }

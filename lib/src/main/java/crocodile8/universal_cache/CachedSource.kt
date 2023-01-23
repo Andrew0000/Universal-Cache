@@ -45,6 +45,18 @@ class CachedSource<P : Any, T : Any>(
                         getFromSource(params, additionalKey, shareOngoing = cacheRequirement.shareOngoingRequest)
                     }
                 }
+                FromCache.CACHED_THEN_LOAD -> {
+                    val cached = getFromCache(params, additionalKey, cacheRequirement)
+                    Logger.log { "get FROM_CACHE_THEN_LOAD: $params / cached: $cached / ${System.currentTimeMillis()}" }
+                    flow {
+                        if (cached != null) {
+                            emitAll(flowOf(cached))
+                        }
+                        emitAll(
+                            getFromSource(params, additionalKey, shareOngoing = cacheRequirement.shareOngoingRequest)
+                        )
+                    }
+                }
             }
         }
         return flow {

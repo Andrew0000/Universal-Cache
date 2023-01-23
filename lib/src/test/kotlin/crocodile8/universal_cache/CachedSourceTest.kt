@@ -270,4 +270,82 @@ internal class CachedSourceTest {
         Assert.assertEquals(1, collected3)
     }
 
+    @Test
+    fun `FromCache CACHE_THEN_LOAD + 1 success + 1 success = Get cached + load`() = runTest {
+        val collected = mutableListOf<Int>()
+        val sourceInvocationCnt = AtomicInteger()
+        val source = CachedSource<Unit, Int>(source = {
+            sourceInvocationCnt.incrementAndGet()
+        })
+        source.get(Unit, fromCache = FromCache.NEVER, CacheRequirement())
+            .collect {
+                // Warm-up cache
+            }
+        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+            .collect {
+                collected += it
+            }
+        Assert.assertEquals(listOf(1, 2), collected)
+    }
+
+    @Test
+    fun `FromCache CACHED_THEN_LOAD + 1 success + 1 failure = Get cached + catch`() = runTest {
+        val collected = mutableListOf<Int>()
+        var caught = false
+        val sourceInvocationCnt = AtomicInteger()
+        val source = CachedSource<Unit, Int>(source = {
+            if (sourceInvocationCnt.incrementAndGet() == 1) {
+                1
+            } else {
+                throw RuntimeException()
+            }
+        })
+        source.get(Unit, fromCache = FromCache.NEVER, CacheRequirement())
+            .collect {
+                // Warm-up cache
+            }
+        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+            .catch { caught = true }
+            .collect {
+                collected += it
+            }
+        Assert.assertTrue(caught)
+        Assert.assertEquals(listOf(1), collected)
+    }
+
+    @Test
+    fun `FromCache CACHED_THEN_LOAD + 1 success + 1 failure + again = Get cached + catch + cached + load`() = runTest {
+        val collected1 = mutableListOf<Int>()
+        val collected2 = mutableListOf<Int>()
+        var caught1 = false
+        var caught2 = false
+        val sourceInvocationCnt = AtomicInteger()
+        val source = CachedSource<Unit, Int>(source = {
+            val cnt = sourceInvocationCnt.incrementAndGet()
+            if (cnt % 2 == 1) {
+                cnt
+            } else {
+                throw RuntimeException()
+            }
+        })
+        source.get(Unit, fromCache = FromCache.NEVER, CacheRequirement())
+            .collect {
+                // Warm-up cache
+            }
+        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+            .catch { caught1 = true }
+            .collect {
+                collected1+= it
+            }
+        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+            .catch { caught2 = true }
+            .collect {
+                collected2+= it
+            }
+        Assert.assertTrue(caught1)
+        Assert.assertFalse(caught2)
+        Assert.assertEquals(listOf(1), collected1)
+        Assert.assertEquals(listOf(1, 3), collected2)
+    }
+
 }
