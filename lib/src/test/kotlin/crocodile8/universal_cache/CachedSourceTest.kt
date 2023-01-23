@@ -137,7 +137,6 @@ internal class CachedSourceTest {
         val source = CachedSource<Unit, Int>(source = { 1 })
         source.get(Unit, fromCache = FromCache.IF_FAILED, CacheRequirement())
             .collect {
-                println("collect in test: $it")
                 collected = it
             }
         Assert.assertEquals(1, collected)
@@ -208,6 +207,29 @@ internal class CachedSourceTest {
             .collect {
                 collected = it
             }
+        Assert.assertEquals(1, collected)
+    }
+
+    @Test
+    fun `FromCache IF_HAVE + 1 success + 1 failure + create flows at the same time = Get cached, laziness works`() = runTest {
+        var collected = -1
+        val sourceInvocationCnt = AtomicInteger()
+        val source = CachedSource<Unit, Int>(source = {
+            delay(100)
+            if (sourceInvocationCnt.incrementAndGet() == 1) {
+                1
+            } else {
+                throw RuntimeException()
+            }
+        })
+        val sourceFlow1 = source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement(shareOngoingRequest = false))
+        val sourceFlow2 = source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement(shareOngoingRequest = false))
+        sourceFlow1.collect {
+            // Cache warm-up
+        }
+        sourceFlow2.collect {
+            collected = it
+        }
         Assert.assertEquals(1, collected)
     }
 
