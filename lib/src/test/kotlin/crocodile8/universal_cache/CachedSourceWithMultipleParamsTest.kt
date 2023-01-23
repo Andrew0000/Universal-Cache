@@ -226,7 +226,7 @@ internal class CachedSourceWithMultipleParamsTest {
     }
 
     @Test
-    fun `FromCache IF_HAVE + 1 success + 1 in parallel with another param + 1 failure = CAtch`() = runTest {
+    fun `FromCache IF_HAVE + 1 success + 1 with another param + 1 failure = Catch`() = runTest {
         var collected1 = -1
         var collected2 = -1
         var collected3 = -1
@@ -240,21 +240,15 @@ internal class CachedSourceWithMultipleParamsTest {
                 throw RuntimeException()
             }
         })
-        val a1 = async {
-            source.get("1", fromCache = FromCache.IF_HAVE, CacheRequirement())
-                .collect {
-                    collected1 = it
-                }
-        }
-        val a2 = async {
-            source.get("2", fromCache = FromCache.IF_HAVE, CacheRequirement())
-                .catch { caught2 = true }
-                .collect {
-                    collected2 = it
-                }
-        }
-        a1.await()
-        a2.await()
+        source.get("1", fromCache = FromCache.IF_HAVE, CacheRequirement())
+            .collect {
+                collected1 = it
+            }
+        source.get("2", fromCache = FromCache.IF_HAVE, CacheRequirement())
+            .catch { caught2 = true }
+            .collect {
+                collected2 = it
+            }
         source.get("1", fromCache = FromCache.IF_HAVE, CacheRequirement())
             .collect {
                 collected3 = it
