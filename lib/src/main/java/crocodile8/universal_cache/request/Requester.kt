@@ -26,7 +26,7 @@ class Requester<P : Any, T : Any>(
         val flow = ongoingsLock.withLock {
 
             var ongoingFlow = ongoings[params]
-            Logger.log { "requestShared: $params / ongoing: $ongoingFlow / ${System.currentTimeMillis()}" }
+            Logger.log { "requestShared: $params / ongoing: $ongoingFlow" }
 
             if (ongoingFlow == null) {
                 val scope = CoroutineScope(Dispatchers.IO)

@@ -4,7 +4,7 @@ internal object Logger {
 
     internal fun log(text: () -> String) {
         if (UniversalCache.printLogs) {
-            println("[UCache] ${text()}")
+            println("[UCache] ${text()} / ${System.currentTimeMillis()}")
         }
     }
 }

@@ -38,7 +38,7 @@ class CachedSource<P : Any, T : Any>(
                 }
                 FromCache.IF_HAVE -> {
                     val cached = getFromCache(params, additionalKey, cacheRequirement)
-                    Logger.log { "get IF_HAVE: $params / cached: $cached / ${System.currentTimeMillis()}" }
+                    Logger.log { "get IF_HAVE: $params / cached: $cached" }
                     if (cached != null) {
                         flow { emit(cached) }
                     } else {
@@ -47,7 +47,7 @@ class CachedSource<P : Any, T : Any>(
                 }
                 FromCache.CACHED_THEN_LOAD -> {
                     val cached = getFromCache(params, additionalKey, cacheRequirement)
-                    Logger.log { "get FROM_CACHE_THEN_LOAD: $params / cached: $cached / ${System.currentTimeMillis()}" }
+                    Logger.log { "get FROM_CACHE_THEN_LOAD: $params / cached: $cached" }
                     flow {
                         if (cached != null) {
                             emitAll(flowOf(cached))
@@ -70,7 +70,7 @@ class CachedSource<P : Any, T : Any>(
             else -> requester.request(params)
         }
             .onEach {
-                Logger.log { "getFromSource: $params -> $it / ${System.currentTimeMillis()}" }
+                Logger.log { "getFromSource: $params -> $it" }
                 putToCache(it, params, additionalKey)
             }
 
