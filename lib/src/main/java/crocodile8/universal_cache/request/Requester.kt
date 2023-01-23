@@ -15,6 +15,11 @@ class Requester<P : Any, T : Any>(
     private val ongoings = mutableMapOf<P, Flow<T>>()
     private val ongoingsLock = Mutex()
 
+    suspend fun request(
+        params: P,
+    ): Flow<T> =
+        flow { emit(source(params))  }
+
     suspend fun requestShared(
         params: P,
     ): Flow<T> {
@@ -24,7 +29,7 @@ class Requester<P : Any, T : Any>(
             Logger.log { "requestShared: $params / ongoing: $ongoingFlow / ${System.currentTimeMillis()}" }
 
             if (ongoingFlow == null) {
-                val scope = CoroutineScope(Dispatchers.IO) // CoroutineScope(Dispatchers.IO + SupervisorJob())
+                val scope = CoroutineScope(Dispatchers.IO)
                 ongoingFlow =
                     flow { emit(source(params)) }
                     .map { Result.success(it) }
