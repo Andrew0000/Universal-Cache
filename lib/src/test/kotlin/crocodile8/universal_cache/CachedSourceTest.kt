@@ -178,6 +178,18 @@ internal class CachedSourceTest {
     }
 
     @Test
+    fun `FromCache IF_HAVE + 1 failure = Catch exception`() = runTest {
+        var collected = -1
+        val source = CachedSource<Unit, Int>(source = { throw RuntimeException() })
+        source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
+            .catch { collected = 2 }
+            .collect {
+                collected = it
+            }
+        Assert.assertEquals(2, collected)
+    }
+
+    @Test
     fun `FromCache IF_HAVE + 1 success + 1 failure = Get cached`() = runTest {
         var collected = -1
         val sourceInvocationCnt = AtomicInteger()
@@ -200,15 +212,40 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache IF_HAVE + 1 failure = Catch exception`() = runTest {
-        var collected = -1
-        val source = CachedSource<Unit, Int>(source = { throw RuntimeException() })
-        source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
-            .catch { collected = 2 }
-            .collect {
-                collected = it
+    fun `FromCache IF_HAVE + 1 success + 1 in parallel + 1 failure = Get cached`() = runTest {
+        var collected1 = -1
+        var collected2 = -1
+        var collected3 = -1
+        val sourceInvocationCnt = AtomicInteger()
+        val source = CachedSource<Unit, Int>(source = {
+            delay(200)
+            if (sourceInvocationCnt.incrementAndGet() == 1) {
+                1
+            } else {
+                throw RuntimeException()
             }
-        Assert.assertEquals(2, collected)
+        })
+        val a1 = async {
+            source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
+                .collect {
+                    collected1 = it
+                }
+        }
+        val a2 = async {
+            source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
+                .collect {
+                    collected2 = it
+                }
+        }
+        a1.await()
+        a2.await()
+        source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
+            .collect {
+                collected3 = it
+            }
+        Assert.assertEquals(1, collected1)
+        Assert.assertEquals(1, collected2)
+        Assert.assertEquals(1, collected3)
     }
 
 }
