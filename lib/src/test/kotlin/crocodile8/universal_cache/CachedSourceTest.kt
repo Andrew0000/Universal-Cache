@@ -177,4 +177,38 @@ internal class CachedSourceTest {
         Assert.assertEquals(1, collected)
     }
 
+    @Test
+    fun `FromCache IF_HAVE + 1 success + 1 failure = Get cached`() = runTest {
+        var collected = -1
+        val sourceInvocationCnt = AtomicInteger()
+        val source = CachedSource<Unit, Int>(source = {
+            if (sourceInvocationCnt.incrementAndGet() == 1) {
+                1
+            } else {
+                throw RuntimeException()
+            }
+        })
+        source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
+            .collect {
+                // It's warm-up call
+            }
+        source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
+            .collect {
+                collected = it
+            }
+        Assert.assertEquals(1, collected)
+    }
+
+    @Test
+    fun `FromCache IF_HAVE + 1 failure = Catch exception`() = runTest {
+        var collected = -1
+        val source = CachedSource<Unit, Int>(source = { throw RuntimeException() })
+        source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
+            .catch { collected = 2 }
+            .collect {
+                collected = it
+            }
+        Assert.assertEquals(2, collected)
+    }
+
 }
