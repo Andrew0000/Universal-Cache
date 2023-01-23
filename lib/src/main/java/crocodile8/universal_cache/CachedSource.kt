@@ -19,35 +19,44 @@ class CachedSource<P : Any, T : Any>(
         fromCache: FromCache,
         cacheRequirement: CacheRequirement,
         additionalKey: Any? = null,
-    ): Flow<T> =
-        when (fromCache) {
-            FromCache.NEVER -> {
-                getFromSource(params, additionalKey)
-            }
-            FromCache.IF_FAILED -> {
-                getFromSource(params, additionalKey)
-                    .catch {
-                        val cached = getFromCache(params, additionalKey, cacheRequirement)
-                        if (cached != null) {
-                            emit(cached)
-                        } else {
-                            throw it
+    ): Flow<T> {
+        val lazyFlow = suspend {
+            when (fromCache) {
+                FromCache.NEVER -> {
+                    getFromSource(params, additionalKey, shareOngoing = cacheRequirement.shareOngoingRequest)
+                }
+                FromCache.IF_FAILED -> {
+                    getFromSource(params, additionalKey, shareOngoing = cacheRequirement.shareOngoingRequest)
+                        .catch {
+                            val cached = getFromCache(params, additionalKey, cacheRequirement)
+                            if (cached != null) {
+                                emit(cached)
+                            } else {
+                                throw it
+                            }
                         }
+                }
+                FromCache.IF_HAVE -> {
+                    val cached = getFromCache(params, additionalKey, cacheRequirement)
+                    Logger.log { "get IF_HAVE: $params / cached: $cached / ${System.currentTimeMillis()}" }
+                    if (cached != null) {
+                        flow { emit(cached) }
+                    } else {
+                        getFromSource(params, additionalKey, shareOngoing = cacheRequirement.shareOngoingRequest)
                     }
-            }
-            FromCache.IF_HAVE -> {
-                val cached = getFromCache(params, additionalKey, cacheRequirement)
-                Logger.log { "get IF_HAVE: $params / cached: $cached / ${System.currentTimeMillis()}" }
-                if (cached != null) {
-                    flow { emit(cached) }
-                } else {
-                    getFromSource(params, additionalKey)
                 }
             }
         }
+        return flow {
+            emitAll(lazyFlow())
+        }
+    }
 
-    private suspend fun getFromSource(params: P, additionalKey: Any?): Flow<T> =
-        requester.requestShared(params)
+    private suspend fun getFromSource(params: P, additionalKey: Any?, shareOngoing: Boolean): Flow<T> =
+        when {
+            shareOngoing -> requester.requestShared(params)
+            else -> requester.request(params)
+        }
             .onEach {
                 Logger.log { "getFromSource: $params -> $it / ${System.currentTimeMillis()}" }
                 putToCache(it, params, additionalKey)
