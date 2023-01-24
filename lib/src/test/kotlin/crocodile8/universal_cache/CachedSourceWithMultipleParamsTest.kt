@@ -72,10 +72,10 @@ internal class CachedSourceWithMultipleParamsTest {
         var collected4 = -1
         var collected5 = -1
         var collected6 = -1
-        val sourceInvocationCnt = AtomicInteger()
+        val sourceInvocationCnt = listOf(AtomicInteger(), AtomicInteger(1), AtomicInteger(2), AtomicInteger(3))
         val source = CachedSource<String, Int>(source = {
             delay(200)
-            sourceInvocationCnt.incrementAndGet()
+            sourceInvocationCnt[it.toInt() - 1].incrementAndGet()
         })
         val a1 = async {
             source.get("1", fromCache = FromCache.NEVER, CacheRequirement())
@@ -90,7 +90,6 @@ internal class CachedSourceWithMultipleParamsTest {
                 }
         }
         val a3 = async {
-            Thread.sleep(100) // Emulate real heavy operation that blocks thread
             source.get("2", fromCache = FromCache.NEVER, CacheRequirement())
                 .collect {
                     collected3 = it
@@ -116,7 +115,6 @@ internal class CachedSourceWithMultipleParamsTest {
                 }
         }
         val a6 = async {
-            Thread.sleep(100) // Emulate real heavy operation that blocks thread
             source.get("4", fromCache = FromCache.NEVER, CacheRequirement())
                 .collect {
                     collected6 = it
