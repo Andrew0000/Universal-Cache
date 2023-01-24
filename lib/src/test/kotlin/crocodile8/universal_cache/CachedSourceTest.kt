@@ -460,6 +460,31 @@ internal class CachedSourceTest {
         Assert.assertEquals(listOf(CachedSourceResult(1, false, 0L)), collected2)
     }
 
+    @Test
+    fun `FromCache IF_HAVE + 1 success + clear + 1 success = Get cached + load`() = runTest {
+        var collected1: CachedSourceResult<Int>? = null
+        var collected2: CachedSourceResult<Int>? = null
+        val sourceInvocationCnt = AtomicInteger()
+        val source = CachedSource<Unit, Int>(source = {
+            sourceInvocationCnt.incrementAndGet()
+        }, timeProvider = zeroTimeProvider())
+        source.get(Unit, fromCache = FromCache.IF_HAVE)
+            .collect {
+                // It's warm-up call
+            }
+        source.getRaw(Unit, fromCache = FromCache.IF_HAVE)
+            .collect {
+                collected1 = it
+            }
+        source.clearCache()
+        source.getRaw(Unit, fromCache = FromCache.IF_HAVE)
+            .collect {
+                collected2 = it
+            }
+        Assert.assertEquals(CachedSourceResult(1, fromCache = true, 0L), collected1)
+        Assert.assertEquals(CachedSourceResult(2, fromCache = false, 0L), collected2)
+    }
+
     private fun zeroTimeProvider() = object : TimeProvider {
         override fun get(): Long = 0L
     }

@@ -21,8 +21,8 @@ class CachedSource<P : Any, T : Any>(
     private val requester = Requester(source)
     private val cacheLock = Mutex()
 
-    fun clearCache() {
-        //TODO
+    suspend fun clearCache() {
+        cache.clear()
     }
 
     suspend fun get(

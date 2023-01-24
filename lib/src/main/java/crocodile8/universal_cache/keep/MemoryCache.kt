@@ -37,4 +37,11 @@ class MemoryCache<P : Any, T : Any>(
             }
         }
     }
+
+    override suspend fun clear() {
+        cacheLock.withLock {
+            cacheMap.clear()
+            cacheList.clear()
+        }
+    }
 }
