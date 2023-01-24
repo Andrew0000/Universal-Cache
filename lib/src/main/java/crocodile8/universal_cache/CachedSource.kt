@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
+/**
+ * Caching layer that loads a result from the given source or uses cache.
+ */
 class CachedSource<P : Any, T : Any>(
     source: suspend (params: P) -> T,
     private val cache: Cache<P, T> = MemoryCache(1),
@@ -21,10 +24,24 @@ class CachedSource<P : Any, T : Any>(
     private val requester = Requester(source)
     private val cacheLock = Mutex()
 
+    /**
+     * Clears underlying cache.
+     */
     suspend fun clearCache() {
         cache.clear()
     }
 
+    /**
+     * Get or load a result based on given parameters.
+     *
+     * @param params request parameters, also may be used as key for cache.
+     * @param fromCache preferred mode of getting from cache.
+     * @param shareOngoingRequest allows to share ongoing source request without running in parallel.
+     * @param maxAge maximum age of cached value to be used as result.
+     * @param additionalKey extra key for cache distinction.
+     *
+     * @return Flow that emits 1 (or 2 in case of [FromCache.CACHED_THEN_LOAD]) elements or exception.
+     */
     suspend fun get(
         params: P,
         fromCache: FromCache,
@@ -35,6 +52,9 @@ class CachedSource<P : Any, T : Any>(
         getRaw(params, fromCache, shareOngoingRequest, maxAge, additionalKey)
             .map { it.value }
 
+    /**
+     * See [get]
+     */
     suspend fun getRaw(
         params: P,
         fromCache: FromCache,
