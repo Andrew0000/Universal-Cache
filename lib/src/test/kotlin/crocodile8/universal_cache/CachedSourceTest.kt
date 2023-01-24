@@ -1,6 +1,7 @@
 package crocodile8.universal_cache
 
 import crocodile8.universal_cache.time.TimeProvider
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -250,9 +251,7 @@ internal class CachedSourceTest {
             } else {
                 throw RuntimeException()
             }
-        }, timeProvider = object : TimeProvider {
-            override fun get(): Long = 0L
-        })
+        }, timeProvider = zeroTimeProvider())
         val a1 = async {
             source.getRaw(Unit, fromCache = FromCache.IF_HAVE)
                 .collect {
@@ -282,9 +281,7 @@ internal class CachedSourceTest {
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(source = {
             sourceInvocationCnt.incrementAndGet()
-        }, timeProvider = object : TimeProvider {
-            override fun get(): Long = 0L
-        })
+        }, timeProvider = zeroTimeProvider())
         source.get(Unit, fromCache = FromCache.NEVER)
             .collect {
                 // Warm-up cache
@@ -341,9 +338,7 @@ internal class CachedSourceTest {
             } else {
                 throw RuntimeException()
             }
-        }, timeProvider = object : TimeProvider {
-            override fun get(): Long = 0L
-        })
+        }, timeProvider = zeroTimeProvider())
         source.get(Unit, fromCache = FromCache.NEVER)
             .collect {
                 // Warm-up cache
@@ -432,6 +427,41 @@ internal class CachedSourceTest {
         Assert.assertEquals(listOf(1), collected1)
         Assert.assertEquals(listOf(1), collected2)
         Assert.assertEquals(listOf(1, 3), collected3)
+    }
+
+    @OptIn(ExperimentalStdlibApi::class)
+    @Test
+    fun `FromCache NEVER + load + cancel + load = Loading cancelled + load`() = runTest {
+        val collected1 = mutableListOf<CachedSourceResult<Int>>()
+        val collected2 = mutableListOf<CachedSourceResult<Int>>()
+        val sourceInvocationCnt = AtomicInteger()
+        val dispatcher = coroutineContext[CoroutineDispatcher.Key] as CoroutineDispatcher
+        val source = CachedSource<Unit, Int>(
+            source = {
+                delay(100)
+                sourceInvocationCnt.incrementAndGet()
+            },
+            timeProvider = zeroTimeProvider(),
+            dispatcher = dispatcher
+        )
+        val a1 = async {
+            source.getRaw(Unit, fromCache = FromCache.NEVER)
+                .collect {
+                    collected1 += it
+                }
+        }
+        delay(50)
+        a1.cancel()
+        source.getRaw(Unit, fromCache = FromCache.NEVER)
+            .collect {
+                collected2 += it
+            }
+        Assert.assertEquals(listOf<CachedSourceResult<Int>>(), collected1)
+        Assert.assertEquals(listOf(CachedSourceResult(1, false, 0L)), collected2)
+    }
+
+    private fun zeroTimeProvider() = object : TimeProvider {
+        override fun get(): Long = 0L
     }
 
 }

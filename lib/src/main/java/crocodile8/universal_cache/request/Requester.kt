@@ -1,6 +1,7 @@
 package crocodile8.universal_cache.request
 
 import crocodile8.universal_cache.Logger
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -17,11 +18,14 @@ class Requester<P : Any, T : Any>(
 
     suspend fun request(
         params: P,
+        dispatcher: CoroutineDispatcher = Dispatchers.IO,
     ): Flow<T> =
         flow { emit(source(params))  }
+            .flowOn(dispatcher)
 
     suspend fun requestShared(
         params: P,
+        dispatcher: CoroutineDispatcher = Dispatchers.IO,
     ): Flow<T> {
         val flow = ongoingsLock.withLock {
 
@@ -29,9 +33,10 @@ class Requester<P : Any, T : Any>(
             Logger.log { "requestShared: $params / ongoing: $ongoingFlow" }
 
             if (ongoingFlow == null) {
-                val scope = CoroutineScope(Dispatchers.IO)
+                val scope = CoroutineScope(dispatcher)
                 ongoingFlow =
                     flow { emit(source(params)) }
+                    .flowOn(dispatcher)
                     .map { Result.success(it) }
                     .catch { emit(Result.failure(it)) }
                     .onCompletion {

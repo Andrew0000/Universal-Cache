@@ -6,6 +6,8 @@ import crocodile8.universal_cache.keep.MemoryCache
 import crocodile8.universal_cache.request.Requester
 import crocodile8.universal_cache.time.SystemTimeProvider
 import crocodile8.universal_cache.time.TimeProvider
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -14,6 +16,7 @@ class CachedSource<P : Any, T : Any>(
     source: suspend (params: P) -> T,
     private val cache: Cache<P, T> = MemoryCache(1),
     private val timeProvider: TimeProvider = SystemTimeProvider,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     private val requester = Requester(source)
     private val cacheLock = Mutex()
@@ -93,8 +96,8 @@ class CachedSource<P : Any, T : Any>(
         shareOngoing: Boolean
     ): Flow<CachedSourceResult<T>> =
         when {
-            shareOngoing -> requester.requestShared(params)
-            else -> requester.request(params)
+            shareOngoing -> requester.requestShared(params, dispatcher)
+            else -> requester.request(params, dispatcher)
         }
             .map { CachedSourceResult(it, fromCache = false, originTimeStamp = timeProvider.get()) }
             .onEach {
