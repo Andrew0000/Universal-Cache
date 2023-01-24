@@ -19,7 +19,16 @@ class CachedSource<P : Any, T : Any>(
         fromCache: FromCache,
         cacheRequirement: CacheRequirement,
         additionalKey: Any? = null,
-    ): Flow<T> {
+    ): Flow<T> =
+        getRaw(params, fromCache, cacheRequirement, additionalKey)
+            .map { it.value }
+
+    suspend fun getRaw(
+        params: P,
+        fromCache: FromCache,
+        cacheRequirement: CacheRequirement,
+        additionalKey: Any? = null,
+    ): Flow<CachedSourceResult<T>> {
         val lazyFlow = suspend {
             when (fromCache) {
                 FromCache.NEVER -> {
@@ -30,7 +39,7 @@ class CachedSource<P : Any, T : Any>(
                         .catch {
                             val cached = getFromCache(params, additionalKey, cacheRequirement)
                             if (cached != null) {
-                                emit(cached)
+                                emit(CachedSourceResult(cached, fromCache = true))
                             } else {
                                 throw it
                             }
@@ -40,7 +49,7 @@ class CachedSource<P : Any, T : Any>(
                     val cached = getFromCache(params, additionalKey, cacheRequirement)
                     Logger.log { "get IF_HAVE: $params / cached: $cached" }
                     if (cached != null) {
-                        flow { emit(cached) }
+                        flow { emit(CachedSourceResult(cached, fromCache = true)) }
                     } else {
                         getFromSource(params, additionalKey, shareOngoing = cacheRequirement.shareOngoingRequest)
                     }
@@ -50,7 +59,7 @@ class CachedSource<P : Any, T : Any>(
                     Logger.log { "get FROM_CACHE_THEN_LOAD: $params / cached: $cached" }
                     flow {
                         if (cached != null) {
-                            emitAll(flowOf(cached))
+                            emitAll(flowOf(CachedSourceResult(cached, fromCache = true)))
                         }
                         emitAll(
                             getFromSource(params, additionalKey, shareOngoing = cacheRequirement.shareOngoingRequest)
@@ -64,7 +73,11 @@ class CachedSource<P : Any, T : Any>(
         }
     }
 
-    private suspend fun getFromSource(params: P, additionalKey: Any?, shareOngoing: Boolean): Flow<T> =
+    private suspend fun getFromSource(
+        params: P,
+        additionalKey: Any?,
+        shareOngoing: Boolean
+    ): Flow<CachedSourceResult<T>> =
         when {
             shareOngoing -> requester.requestShared(params)
             else -> requester.request(params)
@@ -73,6 +86,7 @@ class CachedSource<P : Any, T : Any>(
                 Logger.log { "getFromSource: $params -> $it" }
                 putToCache(it, params, additionalKey)
             }
+            .map { CachedSourceResult(it, fromCache = false) }
 
     private suspend fun getFromCache(params: P, additionalKey: Any?, cacheRequirement: CacheRequirement): T? {
         //TODO check for cacheRequirement

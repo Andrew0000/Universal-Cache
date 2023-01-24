@@ -133,13 +133,14 @@ internal class CachedSourceTest {
 
     @Test
     fun `FromCache IF_FAILED + 1 success`() = runTest {
-        var collected = -1
+        var collected: CachedSourceResult<Int>? = null
         val source = CachedSource<Unit, Int>(source = { 1 })
-        source.get(Unit, fromCache = FromCache.IF_FAILED, CacheRequirement())
+        source.getRaw(Unit, fromCache = FromCache.IF_FAILED, CacheRequirement())
             .collect {
                 collected = it
             }
-        Assert.assertEquals(1, collected)
+        Assert.assertEquals(1, collected!!.value)
+        Assert.assertFalse(collected!!.fromCache)
     }
 
     @Test
@@ -156,7 +157,7 @@ internal class CachedSourceTest {
 
     @Test
     fun `FromCache IF_FAILED + 1 success + 1 failure = Get cached`() = runTest {
-        var collected = -1
+        var collected: CachedSourceResult<Int>? = null
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(source = {
             if (sourceInvocationCnt.incrementAndGet() == 1) {
@@ -169,11 +170,12 @@ internal class CachedSourceTest {
             .collect {
                 // It's warm-up call
             }
-        source.get(Unit, fromCache = FromCache.IF_FAILED, CacheRequirement())
+        source.getRaw(Unit, fromCache = FromCache.IF_FAILED, CacheRequirement())
             .collect {
                 collected = it
             }
-        Assert.assertEquals(1, collected)
+        Assert.assertEquals(1, collected!!.value)
+        Assert.assertTrue(collected!!.fromCache)
     }
 
     @Test
@@ -190,7 +192,7 @@ internal class CachedSourceTest {
 
     @Test
     fun `FromCache IF_HAVE + 1 success + 1 failure = Get cached`() = runTest {
-        var collected = -1
+        var collected: CachedSourceResult<Int>? = null
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(source = {
             if (sourceInvocationCnt.incrementAndGet() == 1) {
@@ -203,11 +205,12 @@ internal class CachedSourceTest {
             .collect {
                 // It's warm-up call
             }
-        source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
+        source.getRaw(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
             .collect {
                 collected = it
             }
-        Assert.assertEquals(1, collected)
+        Assert.assertEquals(1, collected!!.value)
+        Assert.assertTrue(collected!!.fromCache)
     }
 
     @Test
@@ -235,9 +238,9 @@ internal class CachedSourceTest {
 
     @Test
     fun `FromCache IF_HAVE + 1 success + 1 in parallel + 1 failure = Get cached`() = runTest {
-        var collected1 = -1
-        var collected2 = -1
-        var collected3 = -1
+        var collected1: CachedSourceResult<Int>? = null
+        var collected2: CachedSourceResult<Int>? = null
+        var collected3: CachedSourceResult<Int>? = null
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(source = {
             delay(200)
@@ -248,31 +251,31 @@ internal class CachedSourceTest {
             }
         })
         val a1 = async {
-            source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
+            source.getRaw(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
                 .collect {
                     collected1 = it
                 }
         }
         val a2 = async {
-            source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
+            source.getRaw(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
                 .collect {
                     collected2 = it
                 }
         }
         a1.await()
         a2.await()
-        source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
+        source.getRaw(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
             .collect {
                 collected3 = it
             }
-        Assert.assertEquals(1, collected1)
-        Assert.assertEquals(1, collected2)
-        Assert.assertEquals(1, collected3)
+        Assert.assertEquals(CachedSourceResult(1, fromCache = false), collected1)
+        Assert.assertEquals(CachedSourceResult(1, fromCache = false), collected2)
+        Assert.assertEquals(CachedSourceResult(1, fromCache = true), collected3)
     }
 
     @Test
     fun `FromCache CACHE_THEN_LOAD + 1 success + 1 success = Get cached + load`() = runTest {
-        val collected = mutableListOf<Int>()
+        val collected = mutableListOf<CachedSourceResult<Int>>()
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(source = {
             sourceInvocationCnt.incrementAndGet()
@@ -281,11 +284,14 @@ internal class CachedSourceTest {
             .collect {
                 // Warm-up cache
             }
-        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+        source.getRaw(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
             .collect {
                 collected += it
             }
-        Assert.assertEquals(listOf(1, 2), collected)
+        Assert.assertEquals(
+            listOf(CachedSourceResult(1, fromCache = true), CachedSourceResult(2, fromCache = false)),
+            collected
+        )
     }
 
     @Test
@@ -315,8 +321,8 @@ internal class CachedSourceTest {
 
     @Test
     fun `FromCache CACHED_THEN_LOAD + 1 success + 1 failure + again = Get cached + catch + cached + load`() = runTest {
-        val collected1 = mutableListOf<Int>()
-        val collected2 = mutableListOf<Int>()
+        val collected1 = mutableListOf<CachedSourceResult<Int>>()
+        val collected2 = mutableListOf<CachedSourceResult<Int>>()
         var caught1 = false
         var caught2 = false
         val sourceInvocationCnt = AtomicInteger()
@@ -332,20 +338,26 @@ internal class CachedSourceTest {
             .collect {
                 // Warm-up cache
             }
-        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+        source.getRaw(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
             .catch { caught1 = true }
             .collect {
                 collected1+= it
             }
-        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+        source.getRaw(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
             .catch { caught2 = true }
             .collect {
                 collected2+= it
             }
         Assert.assertTrue(caught1)
         Assert.assertFalse(caught2)
-        Assert.assertEquals(listOf(1), collected1)
-        Assert.assertEquals(listOf(1, 3), collected2)
+        Assert.assertEquals(
+            listOf(CachedSourceResult(1, fromCache = true)),
+            collected1
+        )
+        Assert.assertEquals(
+            listOf(CachedSourceResult(1, fromCache = true), CachedSourceResult(3, fromCache = false)),
+            collected2
+        )
     }
 
     @Test
