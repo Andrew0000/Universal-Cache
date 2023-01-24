@@ -1,6 +1,7 @@
 package crocodile8.universal_cache
 
 import crocodile8.universal_cache.keep.MemoryCache
+import crocodile8.universal_cache.time.TimeProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -261,9 +262,15 @@ internal class CachedSourceWithMultipleParamsTest {
     fun `FromCache IF_HAVE + 1 success + different maxAges = Get cached + load`() = runTest {
         var collected1: CachedSourceResult<Int>? = null
         var collected2: CachedSourceResult<Int>? = null
-        val source = CachedSource<String, Int>(source = {
-            it.toInt()
-        }, cache = MemoryCache(2))
+        val source = CachedSource<String, Int>(
+            source = {
+                it.toInt()
+            },
+            cache = MemoryCache(2),
+            timeProvider = object : TimeProvider {
+                override fun get(): Long = 0L
+            }
+        )
         source.get("1", fromCache = FromCache.IF_HAVE)
             .collect {
                 // Cache warm-up
@@ -280,8 +287,8 @@ internal class CachedSourceWithMultipleParamsTest {
             .collect {
                 collected2 = it
             }
-        Assert.assertEquals(CachedSourceResult(1, fromCache = true), collected1)
-        Assert.assertEquals(CachedSourceResult(2, fromCache = false), collected2)
+        Assert.assertEquals(CachedSourceResult(1, fromCache = true, time = 0L), collected1)
+        Assert.assertEquals(CachedSourceResult(2, fromCache = false, time = 0L), collected2)
     }
 
 }

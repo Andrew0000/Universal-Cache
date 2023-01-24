@@ -1,5 +1,6 @@
 package crocodile8.universal_cache
 
+import crocodile8.universal_cache.time.TimeProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -249,6 +250,8 @@ internal class CachedSourceTest {
             } else {
                 throw RuntimeException()
             }
+        }, timeProvider = object : TimeProvider {
+            override fun get(): Long = 0L
         })
         val a1 = async {
             source.getRaw(Unit, fromCache = FromCache.IF_HAVE)
@@ -268,9 +271,9 @@ internal class CachedSourceTest {
             .collect {
                 collected3 = it
             }
-        Assert.assertEquals(CachedSourceResult(1, fromCache = false), collected1)
-        Assert.assertEquals(CachedSourceResult(1, fromCache = false), collected2)
-        Assert.assertEquals(CachedSourceResult(1, fromCache = true), collected3)
+        Assert.assertEquals(CachedSourceResult(1, fromCache = false, time = 0L), collected1)
+        Assert.assertEquals(CachedSourceResult(1, fromCache = false, time = 0L), collected2)
+        Assert.assertEquals(CachedSourceResult(1, fromCache = true, time = 0L), collected3)
     }
 
     @Test
@@ -279,6 +282,8 @@ internal class CachedSourceTest {
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(source = {
             sourceInvocationCnt.incrementAndGet()
+        }, timeProvider = object : TimeProvider {
+            override fun get(): Long = 0L
         })
         source.get(Unit, fromCache = FromCache.NEVER)
             .collect {
@@ -289,7 +294,10 @@ internal class CachedSourceTest {
                 collected += it
             }
         Assert.assertEquals(
-            listOf(CachedSourceResult(1, fromCache = true), CachedSourceResult(2, fromCache = false)),
+            listOf(
+                CachedSourceResult(1, fromCache = true, time = 0L),
+                CachedSourceResult(2, fromCache = false, time = 0L)
+            ),
             collected
         )
     }
@@ -333,6 +341,8 @@ internal class CachedSourceTest {
             } else {
                 throw RuntimeException()
             }
+        }, timeProvider = object : TimeProvider {
+            override fun get(): Long = 0L
         })
         source.get(Unit, fromCache = FromCache.NEVER)
             .collect {
@@ -351,11 +361,14 @@ internal class CachedSourceTest {
         Assert.assertTrue(caught1)
         Assert.assertFalse(caught2)
         Assert.assertEquals(
-            listOf(CachedSourceResult(1, fromCache = true)),
+            listOf(CachedSourceResult(1, fromCache = true, time = 0L)),
             collected1
         )
         Assert.assertEquals(
-            listOf(CachedSourceResult(1, fromCache = true), CachedSourceResult(3, fromCache = false)),
+            listOf(
+                CachedSourceResult(1, fromCache = true, time = 0L),
+                CachedSourceResult(3, fromCache = false, time = 0L)
+            ),
             collected2
         )
     }
