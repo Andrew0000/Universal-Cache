@@ -271,9 +271,9 @@ internal class CachedSourceTest {
             .collect {
                 collected3 = it
             }
-        Assert.assertEquals(CachedSourceResult(1, fromCache = false, time = 0L), collected1)
-        Assert.assertEquals(CachedSourceResult(1, fromCache = false, time = 0L), collected2)
-        Assert.assertEquals(CachedSourceResult(1, fromCache = true, time = 0L), collected3)
+        Assert.assertEquals(CachedSourceResult(1, fromCache = false, originTimeStamp = 0L), collected1)
+        Assert.assertEquals(CachedSourceResult(1, fromCache = false, originTimeStamp = 0L), collected2)
+        Assert.assertEquals(CachedSourceResult(1, fromCache = true, originTimeStamp = 0L), collected3)
     }
 
     @Test
@@ -295,8 +295,8 @@ internal class CachedSourceTest {
             }
         Assert.assertEquals(
             listOf(
-                CachedSourceResult(1, fromCache = true, time = 0L),
-                CachedSourceResult(2, fromCache = false, time = 0L)
+                CachedSourceResult(1, fromCache = true, originTimeStamp = 0L),
+                CachedSourceResult(2, fromCache = false, originTimeStamp = 0L)
             ),
             collected
         )
@@ -361,13 +361,13 @@ internal class CachedSourceTest {
         Assert.assertTrue(caught1)
         Assert.assertFalse(caught2)
         Assert.assertEquals(
-            listOf(CachedSourceResult(1, fromCache = true, time = 0L)),
+            listOf(CachedSourceResult(1, fromCache = true, originTimeStamp = 0L)),
             collected1
         )
         Assert.assertEquals(
             listOf(
-                CachedSourceResult(1, fromCache = true, time = 0L),
-                CachedSourceResult(3, fromCache = false, time = 0L)
+                CachedSourceResult(1, fromCache = true, originTimeStamp = 0L),
+                CachedSourceResult(3, fromCache = false, originTimeStamp = 0L)
             ),
             collected2
         )

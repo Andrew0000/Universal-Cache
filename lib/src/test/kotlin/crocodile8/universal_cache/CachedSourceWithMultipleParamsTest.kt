@@ -287,8 +287,8 @@ internal class CachedSourceWithMultipleParamsTest {
             .collect {
                 collected2 = it
             }
-        Assert.assertEquals(CachedSourceResult(1, fromCache = true, time = 0L), collected1)
-        Assert.assertEquals(CachedSourceResult(2, fromCache = false, time = 0L), collected2)
+        Assert.assertEquals(CachedSourceResult(1, fromCache = true, originTimeStamp = 0L), collected1)
+        Assert.assertEquals(CachedSourceResult(2, fromCache = false, originTimeStamp = 0L), collected2)
     }
 
 }

@@ -51,7 +51,7 @@ class CachedSource<P : Any, T : Any>(
                         .catch {
                             val cached = getFromCache(params, additionalKey, maxAge)
                             if (cached != null) {
-                                emit(CachedSourceResult(cached.value, fromCache = true, time = cached.time))
+                                emit(CachedSourceResult(cached.value, fromCache = true, originTimeStamp = cached.time))
                             } else {
                                 throw it
                             }
@@ -62,7 +62,7 @@ class CachedSource<P : Any, T : Any>(
                     val cached = getFromCache(params, additionalKey, maxAge)
                     Logger.log { "get IF_HAVE: $params / cached: $cached" }
                     if (cached != null) {
-                        flow { emit(CachedSourceResult(cached.value, fromCache = true, time = cached.time)) }
+                        flow { emit(CachedSourceResult(cached.value, fromCache = true, originTimeStamp = cached.time)) }
                     } else {
                         getFromSource(params, additionalKey, shareOngoing = shareOngoingRequest)
                     }
@@ -73,7 +73,7 @@ class CachedSource<P : Any, T : Any>(
                     Logger.log { "get FROM_CACHE_THEN_LOAD: $params / cached: $cached" }
                     flow {
                         if (cached != null) {
-                            emitAll(flowOf(CachedSourceResult(cached.value, fromCache = true, time = cached.time)))
+                            emitAll(flowOf(CachedSourceResult(cached.value, fromCache = true, originTimeStamp = cached.time)))
                         }
                         emitAll(
                             getFromSource(params, additionalKey, shareOngoing = shareOngoingRequest)
@@ -96,10 +96,10 @@ class CachedSource<P : Any, T : Any>(
             shareOngoing -> requester.requestShared(params)
             else -> requester.request(params)
         }
-            .map { CachedSourceResult(it, fromCache = false, time = timeProvider.get()) }
+            .map { CachedSourceResult(it, fromCache = false, originTimeStamp = timeProvider.get()) }
             .onEach {
                 Logger.log { "getFromSource: $params -> $it" }
-                putToCache(it.value, params, additionalKey, time = it.time!!)
+                putToCache(it.value, params, additionalKey, time = it.originTimeStamp ?: timeProvider.get())
             }
 
     private suspend fun getFromCache(params: P, additionalKey: Any?, maxAge: Long?): CachedData<T>? {
