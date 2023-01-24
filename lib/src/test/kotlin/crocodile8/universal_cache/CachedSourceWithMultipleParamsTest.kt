@@ -1,5 +1,6 @@
 package crocodile8.universal_cache
 
+import crocodile8.universal_cache.keep.MemoryCache
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -22,7 +23,7 @@ internal class CachedSourceWithMultipleParamsTest {
     fun `FromCache NEVER + 1 request`() = runTest {
         var collected = -1
         val source = CachedSource<String, Int>(source = { 1 })
-        source.get("1", fromCache = FromCache.NEVER, CacheRequirement())
+        source.get("1", fromCache = FromCache.NEVER)
             .collect {
                 collected = it
             }
@@ -39,19 +40,19 @@ internal class CachedSourceWithMultipleParamsTest {
             it.toInt()
         })
         val a1 = async {
-            source.get("1", fromCache = FromCache.NEVER, CacheRequirement())
+            source.get("1", fromCache = FromCache.NEVER)
                 .collect {
                     collected1 = it
                 }
         }
         val a2 = async {
-            source.get("1", fromCache = FromCache.NEVER, CacheRequirement())
+            source.get("1", fromCache = FromCache.NEVER)
                 .collect {
                     collected2 = it
                 }
         }
         val a3 = async {
-            source.get("2", fromCache = FromCache.NEVER, CacheRequirement())
+            source.get("2", fromCache = FromCache.NEVER)
                 .collect {
                     collected3 = it
                 }
@@ -78,19 +79,19 @@ internal class CachedSourceWithMultipleParamsTest {
             sourceInvocationCnt[it.toInt() - 1].incrementAndGet()
         })
         val a1 = async {
-            source.get("1", fromCache = FromCache.NEVER, CacheRequirement())
+            source.get("1", fromCache = FromCache.NEVER)
                 .collect {
                     collected1 = it
                 }
         }
         val a2 = async {
-            source.get("1", fromCache = FromCache.NEVER, CacheRequirement())
+            source.get("1", fromCache = FromCache.NEVER)
                 .collect {
                     collected2 = it
                 }
         }
         val a3 = async {
-            source.get("2", fromCache = FromCache.NEVER, CacheRequirement())
+            source.get("2", fromCache = FromCache.NEVER)
                 .collect {
                     collected3 = it
                 }
@@ -103,19 +104,19 @@ internal class CachedSourceWithMultipleParamsTest {
         Assert.assertEquals(2, collected3)
 
         val a4 = async {
-            source.get("3", fromCache = FromCache.NEVER, CacheRequirement())
+            source.get("3", fromCache = FromCache.NEVER)
                 .collect {
                     collected4 = it
                 }
         }
         val a5 = async {
-            source.get("3", fromCache = FromCache.NEVER, CacheRequirement())
+            source.get("3", fromCache = FromCache.NEVER)
                 .collect {
                     collected5 = it
                 }
         }
         val a6 = async {
-            source.get("4", fromCache = FromCache.NEVER, CacheRequirement())
+            source.get("4", fromCache = FromCache.NEVER)
                 .collect {
                     collected6 = it
                 }
@@ -132,7 +133,7 @@ internal class CachedSourceWithMultipleParamsTest {
     fun `FromCache IF_FAILED + 1 success`() = runTest {
         var collected = -1
         val source = CachedSource<String, Int>(source = { 1 })
-        source.get("1", fromCache = FromCache.IF_FAILED, CacheRequirement())
+        source.get("1", fromCache = FromCache.IF_FAILED)
             .collect {
                 println("collect in test: $it")
                 collected = it
@@ -144,7 +145,7 @@ internal class CachedSourceWithMultipleParamsTest {
     fun `FromCache IF_FAILED + 1 failure = Catch exception`() = runTest {
         var collected = -1
         val source = CachedSource<String, Int>(source = { throw RuntimeException() })
-        source.get("1", fromCache = FromCache.IF_FAILED, CacheRequirement())
+        source.get("1", fromCache = FromCache.IF_FAILED)
             .catch { collected = 2 }
             .collect {
                 collected = it
@@ -163,16 +164,16 @@ internal class CachedSourceWithMultipleParamsTest {
             } else {
                 throw RuntimeException()
             }
-        })
-        source.get("1", fromCache = FromCache.IF_FAILED, CacheRequirement())
+        }, cache = MemoryCache(2))
+        source.get("1", fromCache = FromCache.IF_FAILED)
             .collect {
                 // It's warm-up call
             }
-        source.get("1", fromCache = FromCache.IF_FAILED, CacheRequirement())
+        source.get("1", fromCache = FromCache.IF_FAILED)
             .collect {
                 collected = it
             }
-        source.get("2", fromCache = FromCache.IF_FAILED, CacheRequirement())
+        source.get("2", fromCache = FromCache.IF_FAILED)
             .catch { caught = true }
             .collect {
                 collected = it
@@ -185,7 +186,7 @@ internal class CachedSourceWithMultipleParamsTest {
     fun `FromCache IF_HAVE + 1 failure = Catch exception`() = runTest {
         var collected = -1
         val source = CachedSource<String, Int>(source = { throw RuntimeException() })
-        source.get("1", fromCache = FromCache.IF_HAVE, CacheRequirement())
+        source.get("1", fromCache = FromCache.IF_HAVE)
             .catch { collected = 2 }
             .collect {
                 collected = it
@@ -204,16 +205,16 @@ internal class CachedSourceWithMultipleParamsTest {
             } else {
                 throw RuntimeException()
             }
-        })
-        source.get("1", fromCache = FromCache.IF_HAVE, CacheRequirement())
+        }, cache = MemoryCache(2))
+        source.get("1", fromCache = FromCache.IF_HAVE)
             .collect {
                 // It's warm-up call
             }
-        source.get("1", fromCache = FromCache.IF_HAVE, CacheRequirement())
+        source.get("1", fromCache = FromCache.IF_HAVE)
             .collect {
                 collected = it
             }
-        source.get("2", fromCache = FromCache.IF_HAVE, CacheRequirement())
+        source.get("2", fromCache = FromCache.IF_HAVE)
             .catch { caught = true }
             .collect {
                 collected = it
@@ -236,17 +237,17 @@ internal class CachedSourceWithMultipleParamsTest {
             } else {
                 throw RuntimeException()
             }
-        })
-        source.get("1", fromCache = FromCache.IF_HAVE, CacheRequirement())
+        }, cache = MemoryCache(2))
+        source.get("1", fromCache = FromCache.IF_HAVE)
             .collect {
                 collected1 = it
             }
-        source.get("2", fromCache = FromCache.IF_HAVE, CacheRequirement())
+        source.get("2", fromCache = FromCache.IF_HAVE)
             .catch { caught2 = true }
             .collect {
                 collected2 = it
             }
-        source.get("1", fromCache = FromCache.IF_HAVE, CacheRequirement())
+        source.get("1", fromCache = FromCache.IF_HAVE)
             .collect {
                 collected3 = it
             }
@@ -254,6 +255,33 @@ internal class CachedSourceWithMultipleParamsTest {
         Assert.assertEquals(-1, collected2)
         Assert.assertTrue(caught2)
         Assert.assertEquals(1, collected3)
+    }
+
+    @Test
+    fun `FromCache IF_HAVE + 1 success + different maxAges = Get cached + load`() = runTest {
+        var collected1: CachedSourceResult<Int>? = null
+        var collected2: CachedSourceResult<Int>? = null
+        val source = CachedSource<String, Int>(source = {
+            it.toInt()
+        }, cache = MemoryCache(2))
+        source.get("1", fromCache = FromCache.IF_HAVE)
+            .collect {
+                // Cache warm-up
+            }
+        source.get("2", fromCache = FromCache.IF_HAVE)
+            .collect {
+                // Cache warm-up
+            }
+        source.getRaw("1", fromCache = FromCache.IF_HAVE, maxAge = 100)
+            .collect {
+                collected1 = it
+            }
+        source.getRaw("2", fromCache = FromCache.IF_HAVE, maxAge = -1)
+            .collect {
+                collected2 = it
+            }
+        Assert.assertEquals(CachedSourceResult(1, fromCache = true), collected1)
+        Assert.assertEquals(CachedSourceResult(2, fromCache = false), collected2)
     }
 
 }

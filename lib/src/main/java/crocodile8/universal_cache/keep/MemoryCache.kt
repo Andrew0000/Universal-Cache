@@ -14,21 +14,21 @@ class MemoryCache<P : Any, T : Any>(
         }
     }
 
-    private val cacheMap = mutableMapOf<CacheKey<P>, T>()
+    private val cacheMap = mutableMapOf<CacheKey<P>, CachedData<T>>()
     private val cacheList = mutableSetOf<CacheKey<P>>()
     private val cacheLock = Mutex()
 
-    override suspend fun get(params: P, additionalKey: Any?): T? {
+    override suspend fun get(params: P, additionalKey: Any?): CachedData<T>? {
         val key = CacheKey(params, additionalKey)
         cacheLock.withLock {
             return cacheMap[key]
         }
     }
 
-    override suspend fun put(value: T, params: P, additionalKey: Any?) {
+    override suspend fun put(value: T, params: P, additionalKey: Any?, time: Long) {
         val key = CacheKey(params, additionalKey)
         cacheLock.withLock {
-            cacheMap[key] = value
+            cacheMap[key] = CachedData(value, time)
             cacheList += key
             while (cacheSize > 0 && cacheList.size > cacheSize) {
                 val oldestKey = cacheList.first()

@@ -13,11 +13,13 @@ fun <T: Any> CachedSourceNoParams(
 
 suspend fun <T: Any> CachedSource<Int, T>.get(
     fromCache: FromCache,
-    cacheRequirement: CacheRequirement = CacheRequirement(),
+    shareOngoingRequest: Boolean = true,
+    maxAge: Long? = null,
     additionalKey: Any? = null,
 ) = get(
     0,
     fromCache,
-    cacheRequirement,
+    shareOngoingRequest,
+    maxAge,
     additionalKey,
 )

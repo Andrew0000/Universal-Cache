@@ -22,7 +22,7 @@ internal class CachedSourceTest {
     fun `FromCache NEVER + 1 request`() = runTest {
         var collected = -1
         val source = CachedSource<Unit, Int>(source = { 1 })
-        source.get(Unit, fromCache = FromCache.NEVER, CacheRequirement())
+        source.get(Unit, fromCache = FromCache.NEVER)
             .collect {
                 collected = it
             }
@@ -40,19 +40,19 @@ internal class CachedSourceTest {
             sourceInvocationCnt.incrementAndGet()
         })
         val a1 = async {
-            source.get(Unit, fromCache = FromCache.NEVER, CacheRequirement())
+            source.get(Unit, fromCache = FromCache.NEVER)
                 .collect {
                     collected1 = it
                 }
         }
         val a2 = async {
-            source.get(Unit, fromCache = FromCache.NEVER, CacheRequirement())
+            source.get(Unit, fromCache = FromCache.NEVER)
                 .collect {
                     collected2 = it
                 }
         }
         val a3 = async {
-            source.get(Unit, fromCache = FromCache.NEVER, CacheRequirement())
+            source.get(Unit, fromCache = FromCache.NEVER)
                 .collect {
                     collected3 = it
                 }
@@ -79,20 +79,20 @@ internal class CachedSourceTest {
             sourceInvocationCnt.incrementAndGet()
         })
         val a1 = async {
-            source.get(Unit, fromCache = FromCache.NEVER, CacheRequirement())
+            source.get(Unit, fromCache = FromCache.NEVER)
                 .collect {
                     collected1 = it
                 }
         }
         val a2 = async {
-            source.get(Unit, fromCache = FromCache.NEVER, CacheRequirement())
+            source.get(Unit, fromCache = FromCache.NEVER)
                 .collect {
                     collected2 = it
                 }
         }
         val a3 = async {
             Thread.sleep(100) // Emulate real heavy operation that blocks thread
-            source.get(Unit, fromCache = FromCache.NEVER, CacheRequirement())
+            source.get(Unit, fromCache = FromCache.NEVER)
                 .collect {
                     collected3 = it
                 }
@@ -105,20 +105,20 @@ internal class CachedSourceTest {
         Assert.assertEquals(1, collected3)
 
         val a4 = async {
-            source.get(Unit, fromCache = FromCache.NEVER, CacheRequirement())
+            source.get(Unit, fromCache = FromCache.NEVER)
                 .collect {
                     collected4 = it
                 }
         }
         val a5 = async {
-            source.get(Unit, fromCache = FromCache.NEVER, CacheRequirement())
+            source.get(Unit, fromCache = FromCache.NEVER)
                 .collect {
                     collected5 = it
                 }
         }
         val a6 = async {
             Thread.sleep(100) // Emulate real heavy operation that blocks thread
-            source.get(Unit, fromCache = FromCache.NEVER, CacheRequirement())
+            source.get(Unit, fromCache = FromCache.NEVER)
                 .collect {
                     collected6 = it
                 }
@@ -135,7 +135,7 @@ internal class CachedSourceTest {
     fun `FromCache IF_FAILED + 1 success`() = runTest {
         var collected: CachedSourceResult<Int>? = null
         val source = CachedSource<Unit, Int>(source = { 1 })
-        source.getRaw(Unit, fromCache = FromCache.IF_FAILED, CacheRequirement())
+        source.getRaw(Unit, fromCache = FromCache.IF_FAILED)
             .collect {
                 collected = it
             }
@@ -147,7 +147,7 @@ internal class CachedSourceTest {
     fun `FromCache IF_FAILED + 1 failure = Catch exception`() = runTest {
         var collected = -1
         val source = CachedSource<Unit, Int>(source = { throw RuntimeException() })
-        source.get(Unit, fromCache = FromCache.IF_FAILED, CacheRequirement())
+        source.get(Unit, fromCache = FromCache.IF_FAILED)
             .catch { collected = 2 }
             .collect {
                 collected = it
@@ -166,11 +166,11 @@ internal class CachedSourceTest {
                 throw RuntimeException()
             }
         })
-        source.get(Unit, fromCache = FromCache.IF_FAILED, CacheRequirement())
+        source.get(Unit, fromCache = FromCache.IF_FAILED)
             .collect {
                 // It's warm-up call
             }
-        source.getRaw(Unit, fromCache = FromCache.IF_FAILED, CacheRequirement())
+        source.getRaw(Unit, fromCache = FromCache.IF_FAILED)
             .collect {
                 collected = it
             }
@@ -182,7 +182,7 @@ internal class CachedSourceTest {
     fun `FromCache IF_HAVE + 1 failure = Catch exception`() = runTest {
         var collected = -1
         val source = CachedSource<Unit, Int>(source = { throw RuntimeException() })
-        source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
+        source.get(Unit, fromCache = FromCache.IF_HAVE)
             .catch { collected = 2 }
             .collect {
                 collected = it
@@ -201,11 +201,11 @@ internal class CachedSourceTest {
                 throw RuntimeException()
             }
         })
-        source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
+        source.get(Unit, fromCache = FromCache.IF_HAVE)
             .collect {
                 // It's warm-up call
             }
-        source.getRaw(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
+        source.getRaw(Unit, fromCache = FromCache.IF_HAVE)
             .collect {
                 collected = it
             }
@@ -225,8 +225,8 @@ internal class CachedSourceTest {
                 throw RuntimeException()
             }
         })
-        val sourceFlow1 = source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement(shareOngoingRequest = false))
-        val sourceFlow2 = source.get(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement(shareOngoingRequest = false))
+        val sourceFlow1 = source.get(Unit, fromCache = FromCache.IF_HAVE, shareOngoingRequest = false)
+        val sourceFlow2 = source.get(Unit, fromCache = FromCache.IF_HAVE, shareOngoingRequest = false)
         sourceFlow1.collect {
             // Cache warm-up
         }
@@ -251,20 +251,20 @@ internal class CachedSourceTest {
             }
         })
         val a1 = async {
-            source.getRaw(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
+            source.getRaw(Unit, fromCache = FromCache.IF_HAVE)
                 .collect {
                     collected1 = it
                 }
         }
         val a2 = async {
-            source.getRaw(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
+            source.getRaw(Unit, fromCache = FromCache.IF_HAVE)
                 .collect {
                     collected2 = it
                 }
         }
         a1.await()
         a2.await()
-        source.getRaw(Unit, fromCache = FromCache.IF_HAVE, CacheRequirement())
+        source.getRaw(Unit, fromCache = FromCache.IF_HAVE)
             .collect {
                 collected3 = it
             }
@@ -280,11 +280,11 @@ internal class CachedSourceTest {
         val source = CachedSource<Unit, Int>(source = {
             sourceInvocationCnt.incrementAndGet()
         })
-        source.get(Unit, fromCache = FromCache.NEVER, CacheRequirement())
+        source.get(Unit, fromCache = FromCache.NEVER)
             .collect {
                 // Warm-up cache
             }
-        source.getRaw(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+        source.getRaw(Unit, fromCache = FromCache.CACHED_THEN_LOAD)
             .collect {
                 collected += it
             }
@@ -306,11 +306,11 @@ internal class CachedSourceTest {
                 throw RuntimeException()
             }
         })
-        source.get(Unit, fromCache = FromCache.NEVER, CacheRequirement())
+        source.get(Unit, fromCache = FromCache.NEVER)
             .collect {
                 // Warm-up cache
             }
-        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD)
             .catch { caught = true }
             .collect {
                 collected += it
@@ -334,16 +334,16 @@ internal class CachedSourceTest {
                 throw RuntimeException()
             }
         })
-        source.get(Unit, fromCache = FromCache.NEVER, CacheRequirement())
+        source.get(Unit, fromCache = FromCache.NEVER)
             .collect {
                 // Warm-up cache
             }
-        source.getRaw(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+        source.getRaw(Unit, fromCache = FromCache.CACHED_THEN_LOAD)
             .catch { caught1 = true }
             .collect {
                 collected1+= it
             }
-        source.getRaw(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+        source.getRaw(Unit, fromCache = FromCache.CACHED_THEN_LOAD)
             .catch { caught2 = true }
             .collect {
                 collected2+= it
@@ -372,7 +372,7 @@ internal class CachedSourceTest {
                 throw RuntimeException()
             }
         })
-        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD)
             .catch { exception = true }
             .collect {
                 collected += it
@@ -398,17 +398,17 @@ internal class CachedSourceTest {
                 throw RuntimeException()
             }
         })
-        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD)
             .catch { exception1 = true }
             .collect {
                 collected1 += it
             }
-        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD)
             .catch { exception2 = true }
             .collect {
                 collected2 += it
             }
-        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD, CacheRequirement())
+        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD)
             .catch { exception3 = true }
             .collect {
                 collected3 += it
