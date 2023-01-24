@@ -136,7 +136,6 @@ internal class CachedSourceWithMultipleParamsTest {
         val source = CachedSource<String, Int>(source = { 1 })
         source.get("1", fromCache = FromCache.IF_FAILED)
             .collect {
-                println("collect in test: $it")
                 collected = it
             }
         Assert.assertEquals(1, collected)
