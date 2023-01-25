@@ -17,7 +17,7 @@ class MainActivity : AppCompatActivity() {
         Log.i("test_", "test_ longRunningTask")
         taskInvocationCnt.incrementAndGet()
     }
-    private val source = CachedSourceNoParams<Int>(longRunningTask)
+    private val source = CachedSourceNoParams(longRunningTask)
 
     private lateinit var textView1: TextView
 
