@@ -2,9 +2,7 @@ package crocodile8.universal_cache
 
 import crocodile8.universal_cache.keep.MemoryCache
 import crocodile8.universal_cache.time.TimeProvider
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert
@@ -29,6 +27,7 @@ internal class CachedSourceWithMultipleParamsTest {
                 collected = it
             }
         Assert.assertEquals(1, collected)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -64,6 +63,7 @@ internal class CachedSourceWithMultipleParamsTest {
         Assert.assertEquals(1, collected1)
         Assert.assertEquals(1, collected2)
         Assert.assertEquals(2, collected3)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -128,6 +128,7 @@ internal class CachedSourceWithMultipleParamsTest {
         Assert.assertEquals(3, collected4)
         Assert.assertEquals(3, collected5)
         Assert.assertEquals(4, collected6)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -139,6 +140,7 @@ internal class CachedSourceWithMultipleParamsTest {
                 collected = it
             }
         Assert.assertEquals(1, collected)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -151,6 +153,7 @@ internal class CachedSourceWithMultipleParamsTest {
                 collected = it
             }
         Assert.assertEquals(2, collected)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -180,6 +183,7 @@ internal class CachedSourceWithMultipleParamsTest {
             }
         Assert.assertEquals(1, collected)
         Assert.assertTrue(caught)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -192,6 +196,7 @@ internal class CachedSourceWithMultipleParamsTest {
                 collected = it
             }
         Assert.assertEquals(2, collected)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -221,6 +226,7 @@ internal class CachedSourceWithMultipleParamsTest {
             }
         Assert.assertEquals(1, collected)
         Assert.assertTrue(caught)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -255,6 +261,7 @@ internal class CachedSourceWithMultipleParamsTest {
         Assert.assertEquals(-1, collected2)
         Assert.assertTrue(caught2)
         Assert.assertEquals(1, collected3)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -288,6 +295,7 @@ internal class CachedSourceWithMultipleParamsTest {
             }
         Assert.assertEquals(CachedSourceResult(1, fromCache = true, originTimeStamp = 0L), collected1)
         Assert.assertEquals(CachedSourceResult(2, fromCache = false, originTimeStamp = 0L), collected2)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
 }

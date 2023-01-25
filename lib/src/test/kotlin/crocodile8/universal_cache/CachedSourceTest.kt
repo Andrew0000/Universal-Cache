@@ -29,6 +29,7 @@ internal class CachedSourceTest {
                 collected = it
             }
         Assert.assertEquals(1, collected)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -65,6 +66,7 @@ internal class CachedSourceTest {
         Assert.assertEquals(1, collected1)
         Assert.assertEquals(1, collected2)
         Assert.assertEquals(1, collected3)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -131,6 +133,7 @@ internal class CachedSourceTest {
         Assert.assertEquals(2, collected4)
         Assert.assertEquals(2, collected5)
         Assert.assertEquals(2, collected6)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -143,6 +146,7 @@ internal class CachedSourceTest {
             }
         Assert.assertEquals(1, collected!!.value)
         Assert.assertFalse(collected!!.fromCache)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -155,6 +159,7 @@ internal class CachedSourceTest {
                 collected = it
             }
         Assert.assertEquals(2, collected)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -178,6 +183,7 @@ internal class CachedSourceTest {
             }
         Assert.assertEquals(1, collected!!.value)
         Assert.assertTrue(collected!!.fromCache)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -190,6 +196,7 @@ internal class CachedSourceTest {
                 collected = it
             }
         Assert.assertEquals(2, collected)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -213,6 +220,7 @@ internal class CachedSourceTest {
             }
         Assert.assertEquals(1, collected!!.value)
         Assert.assertTrue(collected!!.fromCache)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -236,6 +244,7 @@ internal class CachedSourceTest {
             collected = it
         }
         Assert.assertEquals(1, collected)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -273,6 +282,7 @@ internal class CachedSourceTest {
         Assert.assertEquals(CachedSourceResult(1, fromCache = false, originTimeStamp = 0L), collected1)
         Assert.assertEquals(CachedSourceResult(1, fromCache = false, originTimeStamp = 0L), collected2)
         Assert.assertEquals(CachedSourceResult(1, fromCache = true, originTimeStamp = 0L), collected3)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -297,6 +307,7 @@ internal class CachedSourceTest {
             ),
             collected
         )
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -322,6 +333,7 @@ internal class CachedSourceTest {
             }
         Assert.assertTrue(caught)
         Assert.assertEquals(listOf(1), collected)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -366,6 +378,7 @@ internal class CachedSourceTest {
             ),
             collected2
         )
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -387,6 +400,7 @@ internal class CachedSourceTest {
             }
         Assert.assertFalse(exception)
         Assert.assertEquals(listOf(1), collected)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -427,6 +441,7 @@ internal class CachedSourceTest {
         Assert.assertEquals(listOf(1), collected1)
         Assert.assertEquals(listOf(1), collected2)
         Assert.assertEquals(listOf(1, 3), collected3)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @OptIn(ExperimentalStdlibApi::class)
@@ -458,6 +473,7 @@ internal class CachedSourceTest {
             }
         Assert.assertEquals(listOf<CachedSourceResult<Int>>(), collected1)
         Assert.assertEquals(listOf(CachedSourceResult(1, false, 0L)), collected2)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -483,6 +499,7 @@ internal class CachedSourceTest {
             }
         Assert.assertEquals(CachedSourceResult(1, fromCache = true, 0L), collected1)
         Assert.assertEquals(CachedSourceResult(2, fromCache = false, 0L), collected2)
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     private fun zeroTimeProvider() = object : TimeProvider {

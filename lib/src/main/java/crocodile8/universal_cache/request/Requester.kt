@@ -4,10 +4,12 @@ import crocodile8.universal_cache.Logger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 class Requester<P : Any, T : Any>(
     private val source: suspend (params: P) -> T,
@@ -40,10 +42,13 @@ class Requester<P : Any, T : Any>(
                     .map { Result.success(it) }
                     .catch { emit(Result.failure(it)) }
                     .onCompletion {
-                        ongoingsLock.withLock {
-                            ongoings.remove(params)
-                            scope.cancel()
+                        withContext(NonCancellable) {
+                            ongoingsLock.withLock {
+                                ongoings.remove(params)
+                                Logger.log { "requestShared onCompletion: $params, size: ${ongoings.size}" }
+                            }
                         }
+                        scope.cancel()
                     }
                     .shareIn(
                         scope,
@@ -65,4 +70,10 @@ class Requester<P : Any, T : Any>(
         }
         return flow
     }
+
+    internal suspend fun getOngoingSize() =
+        ongoingsLock.withLock {
+            ongoings.size
+        }
+
 }

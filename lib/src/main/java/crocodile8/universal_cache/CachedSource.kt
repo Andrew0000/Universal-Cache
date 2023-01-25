@@ -110,6 +110,9 @@ class CachedSource<P : Any, T : Any>(
         }
     }
 
+    internal suspend fun getOngoingSize() =
+        requester.getOngoingSize()
+
     private suspend fun getFromSource(
         params: P,
         additionalKey: Any?,
