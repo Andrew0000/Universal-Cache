@@ -73,7 +73,9 @@ class Requester<P : Any, T : Any>(
 
     internal suspend fun getOngoingSize() =
         ongoingsLock.withLock {
-            ongoings.size
+            val size = ongoings.size
+            Logger.log { "getOngoingSize: $size" }
+            size
         }
 
 }
