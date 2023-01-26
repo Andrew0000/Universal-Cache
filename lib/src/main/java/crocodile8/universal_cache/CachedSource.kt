@@ -6,6 +6,7 @@ import crocodile8.universal_cache.keep.MemoryCache
 import crocodile8.universal_cache.request.Requester
 import crocodile8.universal_cache.time.SystemTimeProvider
 import crocodile8.universal_cache.time.TimeProvider
+import crocodile8.universal_cache.utils.Logger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*

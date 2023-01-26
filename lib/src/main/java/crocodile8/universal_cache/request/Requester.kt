@@ -1,6 +1,6 @@
 package crocodile8.universal_cache.request
 
-import crocodile8.universal_cache.Logger
+import crocodile8.universal_cache.utils.Logger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
