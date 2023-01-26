@@ -37,7 +37,12 @@ internal class CachedSourceExtTest {
         source.get("1", FromCache.NEVER, shareOngoingRequest = false).collect {}
         source.get("1", FromCache.NEVER, shareOngoingRequest = false).collect {}
         a.await()
-        Assert.assertArrayEquals(arrayOf(1, 2, 5, 6), collected.toTypedArray())
+        // Order is not guaranteed so check result in this way
+        Assert.assertEquals(4, collected.size)
+        Assert.assertTrue(collected.contains(1))
+        Assert.assertTrue(collected.contains(2))
+        Assert.assertTrue(collected.contains(5))
+        Assert.assertTrue(collected.contains(6))
         Assert.assertEquals(0, source.getOngoingSize())
     }
 

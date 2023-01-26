@@ -24,9 +24,19 @@ class CachedSource<P : Any, T : Any>(
 ) {
 
     private val _updates = MutableSharedFlow<Pair<P, CachedSourceResult<T>>>()
+    /**
+     * Flow of every update from the source.
+     * Can be used to observe all future updates.
+     * Note: Order of emission is not guaranteed in high concurrency.
+     */
     val updates: SharedFlow<Pair<P, CachedSourceResult<T>>> = _updates
 
     private val _errors = MutableSharedFlow<Pair<P, Throwable>>()
+    /**
+     * Flow of every exception from the source.
+     * Can be used to observe all future exceptions.
+     * Note: Order of emission is not guaranteed in high concurrency.
+     */
     val errors: SharedFlow<Pair<P, Throwable>> = _errors
 
     private val requester = Requester(source)
