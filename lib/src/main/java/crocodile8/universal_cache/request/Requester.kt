@@ -49,7 +49,7 @@ class Requester<P : Any, T : Any>(
                                     Logger.log { "requestShared onCompletion: $params, size: ${ongoings.size}" }
                                 }
                             } catch (t: Throwable) {
-                                Logger.log { "requestShared onCompletion -> error in lock: $it" }
+                                Logger.log { "requestShared onCompletion -> error in lock: $t" }
                                 throw t
                             }
                         }
