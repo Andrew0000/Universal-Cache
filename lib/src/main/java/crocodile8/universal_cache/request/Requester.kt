@@ -43,9 +43,14 @@ class Requester<P : Any, T : Any>(
                     .catch { emit(Result.failure(it)) }
                     .onCompletion {
                         withContext(NonCancellable) {
-                            ongoingsLock.withLock {
-                                ongoings.remove(params)
-                                Logger.log { "requestShared onCompletion: $params, size: ${ongoings.size}" }
+                            try {
+                                ongoingsLock.withLock {
+                                    ongoings.remove(params)
+                                    Logger.log { "requestShared onCompletion: $params, size: ${ongoings.size}" }
+                                }
+                            } catch (t: Throwable) {
+                                Logger.log { "requestShared onCompletion -> error in lock: $it" }
+                                throw t
                             }
                         }
                         scope.cancel()
