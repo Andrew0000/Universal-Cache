@@ -63,6 +63,8 @@ internal class CachedSourceWithMultipleParamsTest {
         Assert.assertEquals(1, collected1)
         Assert.assertEquals(1, collected2)
         Assert.assertEquals(2, collected3)
+        //TODO it's a workaround for test because ongoing size Assert may come faster than actual ongoings cleanup
+        Thread.sleep(10)
         Assert.assertEquals(0, source.getOngoingSize())
     }
 

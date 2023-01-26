@@ -57,7 +57,7 @@ class Requester<P : Any, T : Any>(
                     }
                     .shareIn(
                         scope,
-                        SharingStarted.WhileSubscribed(replayExpirationMillis = 1000),
+                        SharingStarted.WhileSubscribed(),
                         1
                     )
                     .take(1)

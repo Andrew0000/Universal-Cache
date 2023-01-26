@@ -38,6 +38,7 @@ class CachedSourceUpdatesTest {
             listOf(1, 2, 3).toIntArray(),
             collectedUpdates.toIntArray()
         )
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -60,6 +61,7 @@ class CachedSourceUpdatesTest {
             listOf(1, 2).toIntArray(),
             collectedUpdates.toIntArray()
         )
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -103,6 +105,7 @@ class CachedSourceUpdatesTest {
             listOf("2", "4", "6", "8").toTypedArray(),
             collectedErrors.map { it.message }.toTypedArray()
         )
+        Assert.assertEquals(0, source.getOngoingSize())
     }
 
 }
