@@ -25,8 +25,12 @@ class CachedSource<P : Any, T : Any>(
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     private val updatesScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
     private val _updates = MutableSharedFlow<Pair<P, CachedSourceResult<T>>>()
     val updates: SharedFlow<Pair<P, CachedSourceResult<T>>> = _updates
+
+    private val _errors = MutableSharedFlow<Pair<P, Throwable>>()
+    val errors: SharedFlow<Pair<P, Throwable>> = _errors
 
     private val requester = Requester(source)
     private val cacheLock = Mutex()
@@ -136,6 +140,12 @@ class CachedSource<P : Any, T : Any>(
                 updatesScope.launch {
                     _updates.emit(params to it)
                 }
+            }
+            .catch {
+                updatesScope.launch {
+                    _errors.emit(params to it)
+                }
+                throw it
             }
 
     private suspend fun getFromCache(params: P, additionalKey: Any?, maxAge: Long?): CachedData<T>? {
