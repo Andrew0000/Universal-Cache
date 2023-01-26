@@ -7,8 +7,11 @@ import crocodile8.universal_cache.request.Requester
 import crocodile8.universal_cache.time.SystemTimeProvider
 import crocodile8.universal_cache.time.TimeProvider
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -21,6 +24,10 @@ class CachedSource<P : Any, T : Any>(
     private val timeProvider: TimeProvider = SystemTimeProvider,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
+    private val updatesScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val _updates = MutableSharedFlow<Pair<P, CachedSourceResult<T>>>()
+    val updates: SharedFlow<Pair<P, CachedSourceResult<T>>> = _updates
+
     private val requester = Requester(source)
     private val cacheLock = Mutex()
 
@@ -126,6 +133,9 @@ class CachedSource<P : Any, T : Any>(
             .onEach {
                 Logger.log { "getFromSource: $params -> $it" }
                 putToCache(it.value, params, additionalKey, time = it.originTimeStamp ?: timeProvider.get())
+                updatesScope.launch {
+                    _updates.emit(params to it)
+                }
             }
 
     private suspend fun getFromCache(params: P, additionalKey: Any?, maxAge: Long?): CachedData<T>? {

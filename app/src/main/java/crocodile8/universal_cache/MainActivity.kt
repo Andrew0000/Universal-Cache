@@ -9,6 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
 
+@SuppressLint("SetTextI18n")
 class MainActivity : AppCompatActivity() {
 
     private val taskInvocationCnt = AtomicInteger()
@@ -20,17 +21,19 @@ class MainActivity : AppCompatActivity() {
     private val source = CachedSourceNoParams(longRunningTask)
 
     private lateinit var textView1: TextView
+    private lateinit var textView2: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         textView1 = findViewById(R.id.textView_1)
+        textView2 = findViewById(R.id.textView_2)
 
-        launchParallelRequests(textView1)
+        launchAndObserveParallelRequests(textView1)
+        observeUpdates()
     }
 
-    @SuppressLint("SetTextI18n")
-    private fun launchParallelRequests(textView1: TextView) {
+    private fun launchAndObserveParallelRequests(textView1: TextView) {
         lifecycleScope.launch {
             source.get(FromCache.IF_HAVE)
                 .collect {
@@ -49,4 +52,14 @@ class MainActivity : AppCompatActivity() {
                 }
         }
     }
+
+    private fun observeUpdates() {
+        lifecycleScope.launch {
+            source.updates.collect {
+                Log.i("test_", "test_ collect updates: $it")
+                textView2.text = "Update: $it"
+            }
+        }
+    }
+
 }
