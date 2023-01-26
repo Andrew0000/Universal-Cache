@@ -1,6 +1,5 @@
 package crocodile8.universal_cache.keep
 
-import crocodile8.universal_cache.CacheKey
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
