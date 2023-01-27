@@ -457,7 +457,7 @@ internal class CachedSourceTest {
                 sourceInvocationCnt.incrementAndGet()
             },
             timeProvider = zeroTimeProvider(),
-            dispatcher = dispatcher
+            dispatcher = dispatcher,
         )
         val a1 = async {
             source.getRaw(Unit, fromCache = FromCache.NEVER)
@@ -473,6 +473,30 @@ internal class CachedSourceTest {
             }
         Assert.assertEquals(listOf<CachedSourceResult<Int>>(), collected1)
         Assert.assertEquals(listOf(CachedSourceResult(1, false, 0L)), collected2)
+        Assert.assertEquals(0, source.getOngoingSize())
+    }
+
+    @OptIn(ExperimentalStdlibApi::class)
+    @Test
+    fun `FromCache NEVER + load + cancel + load another param = No ongoings`() = runTest {
+        val sourceInvocationCnt = AtomicInteger()
+        val dispatcher = coroutineContext[CoroutineDispatcher.Key] as CoroutineDispatcher
+        val source = CachedSource<String, Int>(
+            source = {
+                delay(100)
+                sourceInvocationCnt.incrementAndGet()
+            },
+            timeProvider = zeroTimeProvider(),
+            dispatcher = dispatcher,
+        )
+        val a1 = async {
+            source.getRaw("1", fromCache = FromCache.NEVER)
+                .collect {}
+        }
+        delay(50)
+        a1.cancel()
+        source.getRaw("2", fromCache = FromCache.NEVER)
+            .collect {}
         Assert.assertEquals(0, source.getOngoingSize())
     }
 
