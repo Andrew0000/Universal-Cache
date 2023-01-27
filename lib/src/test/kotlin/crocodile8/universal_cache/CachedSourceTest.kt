@@ -473,6 +473,8 @@ internal class CachedSourceTest {
             }
         Assert.assertEquals(listOf<CachedSourceResult<Int>>(), collected1)
         Assert.assertEquals(listOf(CachedSourceResult(1, false, 0L)), collected2)
+
+        // Warning! Theoretically may be unstable if first cancellation takes more time than test (in fact async)
         Assert.assertEquals(0, source.getOngoingSize())
     }
 
@@ -497,6 +499,8 @@ internal class CachedSourceTest {
         a1.cancel()
         source.getRaw("2", fromCache = FromCache.NEVER)
             .collect {}
+
+        // Warning! Theoretically may be unstable if first cancellation takes more time than test (in fact async)
         Assert.assertEquals(0, source.getOngoingSize())
     }
 

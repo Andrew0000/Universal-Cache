@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import java.util.concurrent.atomic.AtomicBoolean
 
 class Requester<P : Any, T : Any>(
     private val source: suspend (params: P) -> T,
@@ -37,7 +36,7 @@ class Requester<P : Any, T : Any>(
 
             if (ongoingFlow == null) {
                 val scope = CoroutineScope(dispatcher)
-                val isActive = AtomicBoolean(true)
+                var isInOngoings = true
                 ongoingFlow =
                     flow { emit(source(params)) }
                         .flowOn(dispatcher)
@@ -48,11 +47,17 @@ class Requester<P : Any, T : Any>(
                             // It's better to release ongoing earlier then .onCompletion()
                             // but only .onCompletion() will be called on cancellation
                             // so try in both places
-                            tryRemoveOngoing(params, isActive)
+                            if (isInOngoings) {
+                                isInOngoings = false
+                                removeOngoing(params)
+                            }
                         }
                         .onCompletion {
                             Logger.log { "requestShared onCompletion: $params" }
-                            tryRemoveOngoing(params, isActive)
+                            if (isInOngoings) {
+                                isInOngoings = false
+                                removeOngoing(params)
+                            }
                             scope.cancel()
                         }
                         .shareIn(
@@ -83,19 +88,16 @@ class Requester<P : Any, T : Any>(
             size
         }
 
-    private suspend fun tryRemoveOngoing(params: P, isActive: AtomicBoolean) {
-        if (isActive.getAndSet(false)) {
-            withContext(NonCancellable) {
-                try {
-                    ongoingsLock.withLock {
-                        ongoings.remove(params)
-                        Logger.log { "requestShared removeOngoing: $params, size: ${ongoings.size}" }
-                    }
-                } catch (t: Throwable) {
-                    Logger.log { "requestShared removeOngoing -> error in lock: $t" }
-                    throw t
+    private suspend fun removeOngoing(params: P) =
+        withContext(NonCancellable) {
+            try {
+                ongoingsLock.withLock {
+                    ongoings.remove(params)
+                    Logger.log { "requestShared removeOngoing: $params, size: ${ongoings.size}" }
                 }
+            } catch (t: Throwable) {
+                Logger.log { "requestShared removeOngoing -> error in lock: $t" }
+                throw t
             }
         }
-    }
 }
