@@ -19,7 +19,7 @@ private val cachedSource = CachedSource<String, Int>(
     source = { params -> api.getSomething(params) }
 )
 
-lifecycleScope.launch {
+scope.launch {
     cachedSource.get(FromCache.CACHED_THEN_LOAD, maxAge = 5_000)
         .collect {
             // Use received values
