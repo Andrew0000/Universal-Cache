@@ -22,7 +22,7 @@ class Requester<P : Any, T : Any>(
         params: P,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
     ): Flow<T> =
-        flow { emit(source(params))  }
+        flow { emit(source(params)) }
             .flowOn(dispatcher)
 
     suspend fun requestShared(
@@ -38,37 +38,37 @@ class Requester<P : Any, T : Any>(
                 val scope = CoroutineScope(dispatcher)
                 ongoingFlow =
                     flow { emit(source(params)) }
-                    .flowOn(dispatcher)
-                    .map { Result.success(it) }
-                    .catch { emit(Result.failure(it)) }
-                    .onCompletion {
-                        withContext(NonCancellable) {
-                            try {
-                                ongoingsLock.withLock {
-                                    ongoings.remove(params)
-                                    Logger.log { "requestShared onCompletion: $params, size: ${ongoings.size}" }
+                        .flowOn(dispatcher)
+                        .map { Result.success(it) }
+                        .catch { emit(Result.failure(it)) }
+                        .onCompletion {
+                            withContext(NonCancellable) {
+                                try {
+                                    ongoingsLock.withLock {
+                                        ongoings.remove(params)
+                                        Logger.log { "requestShared onCompletion: $params, size: ${ongoings.size}" }
+                                    }
+                                } catch (t: Throwable) {
+                                    Logger.log { "requestShared onCompletion -> error in lock: $t" }
+                                    throw t
                                 }
-                            } catch (t: Throwable) {
-                                Logger.log { "requestShared onCompletion -> error in lock: $t" }
-                                throw t
+                            }
+                            scope.cancel()
+                        }
+                        .shareIn(
+                            scope,
+                            SharingStarted.WhileSubscribed(),
+                            1
+                        )
+                        .take(1)
+                        // Shared flow doesn't throw exceptions so wrap and re-throw possible exceptions
+                        .map {
+                            if (it.isSuccess) {
+                                it.getOrThrow()
+                            } else {
+                                throw it.exceptionOrNull()!!
                             }
                         }
-                        scope.cancel()
-                    }
-                    .shareIn(
-                        scope,
-                        SharingStarted.WhileSubscribed(),
-                        1
-                    )
-                    .take(1)
-                    // Shared flow doesn't throw exceptions so wrap and re-throw possible exceptions
-                    .map {
-                        if (it.isSuccess) {
-                            it.getOrThrow()
-                        } else {
-                            throw it.exceptionOrNull()!!
-                        }
-                    }
                 ongoings[params] = ongoingFlow
             }
             ongoingFlow
