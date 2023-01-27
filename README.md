@@ -1,6 +1,6 @@
 # Universal-Cache (Kotlin / Coroutines / Flow)
 
-The goal: Organise cache and request sharing in Kotlin applications in easy way.
+The goal: Organise cache and a request sharing in Kotlin applications in easy way.
 
 Some functions:
 ✔️ Share ongoing request(s) by parameters as key.
@@ -12,4 +12,17 @@ with a lot of independent components which may use same API-endpoints at the nea
 
 // Artifact publication - TODO
 
-// Code samples - TODO
+Tupical usage:
+
+```
+private val cachedSource = CachedSource<String, Int>(
+    source = { params -> api.getSomething(params) }
+)
+
+lifecycleScope.launch {
+    cachedSource.get(FromCache.CACHED_THEN_LOAD, maxAge = 5_000)
+        .collect {
+            // Use received values
+        }
+}
+```
