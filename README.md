@@ -1,4 +1,4 @@
-# Universal-Cache (Kotlin / Coroutines / Flow)
+# Universal Cache (Kotlin / Coroutines / Flow)
 
 ### Goal: Organise cache and a request sharing with Kotlin in easy way.
 
