@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'crocodile8.universal_cache'
+    namespace 'crocodile8.universal_cache_app'
     compileSdk 33
 
     defaultConfig {
-        applicationId "crocodile8.universal_cache"
+        applicationId "crocodile8.universal_cache_app"
         minSdk 24
         targetSdk 33
         versionCode 1

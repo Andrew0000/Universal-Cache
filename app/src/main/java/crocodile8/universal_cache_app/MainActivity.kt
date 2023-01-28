@@ -1,4 +1,4 @@
-package crocodile8.universal_cache
+package crocodile8.universal_cache_app
 
 import android.annotation.SuppressLint
 import androidx.appcompat.app.AppCompatActivity
@@ -6,6 +6,9 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
+import crocodile8.universal_cache.CachedSourceNoParams
+import crocodile8.universal_cache.FromCache
+import crocodile8.universal_cache.get
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
 
