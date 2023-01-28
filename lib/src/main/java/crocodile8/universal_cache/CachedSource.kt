@@ -46,7 +46,9 @@ class CachedSource<P : Any, T : Any>(
      * Clears underlying cache.
      */
     suspend fun clearCache() {
-        cache.clear()
+        cacheLock.withLock {
+            cache.clear()
+        }
     }
 
     /**
