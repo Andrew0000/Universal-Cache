@@ -10,8 +10,11 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url "https://jitpack.io" }
     }
 }
 rootProject.name = "Universal Cache"
-include ':app'
 include ':lib'
+if (!System.env.JITPACK) {
+    include ':app'
+}

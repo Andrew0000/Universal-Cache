@@ -30,9 +30,17 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+    flavorDimensions "libDep"
+    productFlavors {
+        libDepLocal { dimension "libDep" }
+        libDepJitpack { dimension "libDep" }
+    }
 }
 
 dependencies {
+
+    libDepLocalImplementation project(":lib")
+    libDepJitpackImplementation 'com.github.Andrew0000:Universal-Cache:1.+'
 
     implementation 'androidx.core:core-ktx:1.9.0'
     implementation 'androidx.appcompat:appcompat:1.6.0'
@@ -42,8 +50,6 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.5.1"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4"
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
-
-    implementation project(":lib")
 
     testImplementation 'junit:junit:4.13.2'
 
