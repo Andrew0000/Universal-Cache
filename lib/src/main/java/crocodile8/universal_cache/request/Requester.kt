@@ -1,5 +1,6 @@
 package crocodile8.universal_cache.request
 
+import crocodile8.universal_cache.CachedSourceNoParams
 import crocodile8.universal_cache.utils.Logger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -18,6 +19,11 @@ class Requester<P : Any, T : Any>(
     private val ongoings = mutableMapOf<P, Flow<T>>()
     private val ongoingsLock = Mutex()
 
+    /**
+     * Wraps source request with a flow. Doesn't check for ongoings.
+     *
+     * @see [requestShared]
+     */
     suspend fun request(
         params: P,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -25,6 +31,18 @@ class Requester<P : Any, T : Any>(
         flow { emit(source(params)) }
             .flowOn(dispatcher)
 
+    /**
+     * Makes a request or attaches to an ongoing request
+     * if there is any in progress with the given params.
+     *
+     * @param params request parameters, also used as key for sharing.
+     * Must be 1) a data-class or 2) primitive or 3) has equals/hash code implemented for proper distinction.
+     * Use [Unit] ot [Int] or look at [CachedSourceNoParams] if there are no parameters for request.
+     *
+     * @param dispatcher [CoroutineDispatcher] that will be used for request.
+     *
+     * @return shared flow that other callers with same [params] can be attached to.
+     */
     suspend fun requestShared(
         params: P,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,

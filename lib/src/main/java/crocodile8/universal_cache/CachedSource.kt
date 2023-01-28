@@ -54,11 +54,18 @@ class CachedSource<P : Any, T : Any>(
     /**
      * Get or load a result based on given parameters.
      *
-     * @param params request parameters, also may be used as key for cache.
+     * @param params request parameters, also may be used as key for cache and ongoing sharing.
+     * Must be 1) a data-class or 2) primitive or 3) has equals/hash code implemented for proper distinction.
+     * Use [Unit] ot [Int] or [CachedSourceNoParams] if there are no parameters for request.
+     *
      * @param fromCache preferred mode of getting from cache.
+     *
      * @param shareOngoingRequest allows to share ongoing source request without running in parallel.
+     *
      * @param maxAge maximum age of cached value to be used as result.
+     *
      * @param additionalKey extra key for cache distinction.
+     * Must be 1) a data-class or 2) primitive or 3) has equals/hash code implemented for proper distinction.
      *
      * @return Flow that emits 1 (or 2 in case of [FromCache.CACHED_THEN_LOAD]) elements or exception.
      */
