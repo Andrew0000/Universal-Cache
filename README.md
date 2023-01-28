@@ -14,7 +14,7 @@ with a lot of independent components which may use same API-endpoints at the nea
 
 Basic case:  
 
-```
+```kotlin
 private val cachedSource = CachedSource<String, Int>(
     source = { params -> api.getSomething(params) }
 )
