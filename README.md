@@ -28,7 +28,7 @@ scope.launch {
 ```
 Main entities:  
 **CachedSource** - is a wrapper for your data source (usually api call or db-request). Provides Flow of data or errors in several ways.  
-**FromCache** - is an enum with request options like FromCache.IF_HAVE and other.  
+**FromCache** - is an enum with request options like **FromCache.IF_HAVE** and other.  
 **Requester** - is a wrapper that can share ongoing request(s). It's used in **CachedSource** but you can use it independently.  
 **Cache** - is an interface for a how you store your cache. There is default in-memory implementation **MemoryCache**.  
 
