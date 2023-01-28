@@ -12,6 +12,8 @@ with a lot of independent components which may use same API-endpoints at the nea
 
 // Artifact publication - TODO
 
+[![](https://jitpack.io/v/Andrew0000/Universal-Cache.svg)](https://jitpack.io/#Andrew0000/Universal-Cache)
+
 Typical usage:
 
 ```
