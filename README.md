@@ -20,7 +20,7 @@ private val cachedSource = CachedSource<String, Int>(
 )
 
 scope.launch {
-    cachedSource.get(FromCache.CACHED_THEN_LOAD, maxAge = 5_000)
+    cachedSource.get("some request parameter", FromCache.CACHED_THEN_LOAD, maxAge = 5_000)
         .collect {
             // Use received values
         }
