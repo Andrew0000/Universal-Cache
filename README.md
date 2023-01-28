@@ -1,6 +1,6 @@
 # Universal Cache (Kotlin / Coroutines / Flow)
 
-### Goal: Organise cache and a request sharing with Kotlin in a simple way.
+### Goal: Make cache and a request sharing with Kotlin in a simple way.
 
 Some functions:  
 ✔️ Share ongoing request(s) by parameters as key.  
