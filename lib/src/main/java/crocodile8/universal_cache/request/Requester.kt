@@ -29,56 +29,60 @@ class Requester<P : Any, T : Any>(
         params: P,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
     ): Flow<T> {
-        val flow = ongoingsLock.withLock {
+        val lazyFlow = suspend {
+            ongoingsLock.withLock {
 
-            var ongoingFlow = ongoings[params]
-            Logger.log { "requestShared: $params / ongoing: $ongoingFlow" }
+                var ongoingFlow = ongoings[params]
+                Logger.log { "requestShared: $params / ongoing: $ongoingFlow" }
 
-            if (ongoingFlow == null) {
-                val scope = CoroutineScope(dispatcher)
-                var isInOngoings = true
-                ongoingFlow =
-                    flow { emit(source(params)) }
-                        .flowOn(dispatcher)
-                        .map { Result.success(it) }
-                        .catch { emit(Result.failure(it)) }
-                        .take(1)
-                        .onEach {
-                            // It's better to release ongoing earlier then .onCompletion()
-                            // but only .onCompletion() will be called on cancellation
-                            // so try in both places
-                            if (isInOngoings) {
-                                isInOngoings = false
-                                removeOngoing(params)
+                if (ongoingFlow == null) {
+                    val scope = CoroutineScope(dispatcher)
+                    var isInOngoings = true
+                    ongoingFlow =
+                        flow { emit(source(params)) }
+                            .flowOn(dispatcher)
+                            .map { Result.success(it) }
+                            .catch { emit(Result.failure(it)) }
+                            .take(1)
+                            .onEach {
+                                // It's better to release ongoing earlier then .onCompletion()
+                                // but only .onCompletion() will be called on cancellation
+                                // so try in both places
+                                if (isInOngoings) {
+                                    isInOngoings = false
+                                    removeOngoing(params)
+                                }
                             }
-                        }
-                        .onCompletion {
-                            Logger.log { "requestShared onCompletion: $params" }
-                            if (isInOngoings) {
-                                isInOngoings = false
-                                removeOngoing(params)
+                            .onCompletion {
+                                Logger.log { "requestShared onCompletion: $params" }
+                                if (isInOngoings) {
+                                    isInOngoings = false
+                                    removeOngoing(params)
+                                }
+                                scope.cancel()
                             }
-                            scope.cancel()
-                        }
-                        .shareIn(
-                            scope,
-                            SharingStarted.WhileSubscribed(),
-                            1
-                        )
-                        .take(1)
-                        // Shared flow doesn't throw exceptions so wrap and re-throw possible exceptions
-                        .map {
-                            if (it.isSuccess) {
-                                it.getOrThrow()
-                            } else {
-                                throw it.exceptionOrNull()!!
+                            .shareIn(
+                                scope,
+                                SharingStarted.WhileSubscribed(),
+                                1
+                            )
+                            .take(1)
+                            // Shared flow doesn't throw exceptions so wrap and re-throw possible exceptions
+                            .map {
+                                if (it.isSuccess) {
+                                    it.getOrThrow()
+                                } else {
+                                    throw it.exceptionOrNull()!!
+                                }
                             }
-                        }
-                ongoings[params] = ongoingFlow
+                    ongoings[params] = ongoingFlow
+                }
+                ongoingFlow
             }
-            ongoingFlow
         }
-        return flow
+        return flow {
+            emitAll(lazyFlow())
+        }
     }
 
     internal suspend fun getOngoingSize() =
