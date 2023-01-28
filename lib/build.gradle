@@ -13,7 +13,7 @@ afterEvaluate {
     publishing {
         publications {
             release(MavenPublication) {
-            //    from components.release
+                from components.java
                 groupId = "crocodile8008.universal_cache"
                 artifactId = 'universal_cache'
                 version = version
