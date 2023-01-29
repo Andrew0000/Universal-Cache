@@ -66,6 +66,7 @@ Enum with request options:
 FromCache.NEVER
 FromCache.IF_FAILED
 FromCache.IF_HAVE
+FromCache.ONLY
 FromCache.CACHED_THEN_LOAD
 ```
 
