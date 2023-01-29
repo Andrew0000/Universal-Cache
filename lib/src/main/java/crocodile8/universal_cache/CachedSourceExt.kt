@@ -1,7 +1,6 @@
 package crocodile8.universal_cache
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
@@ -38,10 +37,15 @@ suspend fun <P : Any, T : Any> CachedSource<P, T>.requestAndObserve(
                 updates
                     .filter { it.first == params }
                     .map { it.second.value },
+
                 get(params, FromCache.NEVER)
                     .retry(requestRetryCount)
-                    .take(1),
+                    .take(1)
+                    // Don't emit from this stream because all updates are emitted from .updates anyway.
+                    // The downside: a value from .updates (from another parallel request)
+                    // can arrive before this request.
+                    // More complex solution is needed to solve this behaviour.
+                    .filter { false },
             )
-                .distinctUntilChanged()
         )
     }
