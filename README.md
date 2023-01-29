@@ -76,7 +76,7 @@ It's used in **CachedSource** but you can use it independently.
 val requester = Requester(source)
 ...
 requester.requestShared("some request params")
-    .collect{
+    .collect {
         ...
     }
 ```
