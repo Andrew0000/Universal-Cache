@@ -19,6 +19,44 @@ internal class CachedSourceExtTest {
     }
 
     @Test
+    fun `getOrRequest + have cache + predicate ok = Get from cache`() = runTest {
+        var collected: Int? = null
+        val sourceInvocationCnt = AtomicInteger()
+        val source = CachedSource<String, Int>(source = {
+            sourceInvocationCnt.incrementAndGet()
+        })
+        source.get("1", FromCache.NEVER)
+            .collect { /* Cache warm-up */ }
+
+        source.getOrRequest("1", fromCachePredicate = { true })
+            .collect { collected = it }
+
+        Assert.assertEquals(1, collected)
+        // 1 from a cache warm-up
+        Assert.assertEquals(1, sourceInvocationCnt.get())
+        Assert.assertEquals(0, source.getOngoingSize())
+    }
+
+    @Test
+    fun `getOrRequest + have cache + predicate false = Request again`() = runTest {
+        var collected: Int? = null
+        val sourceInvocationCnt = AtomicInteger()
+        val source = CachedSource<String, Int>(source = {
+            sourceInvocationCnt.incrementAndGet()
+        })
+        source.get("1", FromCache.NEVER)
+            .collect { /* Cache warm-up */ }
+
+        source.getOrRequest("1", fromCachePredicate = { false })
+            .collect { collected = it }
+
+        Assert.assertEquals(2, collected)
+        // 1 from a cache warm-up + 1 new request after predicate returned false
+        Assert.assertEquals(2, sourceInvocationCnt.get())
+        Assert.assertEquals(0, source.getOngoingSize())
+    }
+
+    @Test
     fun `requestAndObserve + 3 emits with same key + 2 emits with different key`() = runTest {
         val collected = mutableListOf<Int>()
         val sourceInvocationCnt = AtomicInteger()

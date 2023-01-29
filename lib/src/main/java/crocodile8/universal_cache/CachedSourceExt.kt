@@ -10,6 +10,24 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.retry
 import kotlinx.coroutines.flow.take
 
+suspend fun <P : Any, T : Any> CachedSource<P, T>.getOrRequest(
+    params: P,
+    fromCachePredicate: (cached: CachedSourceResult<T>) -> Boolean,
+): Flow<T> =
+    flow {
+        getRaw(params, FromCache.IF_HAVE)
+            .collect {
+                if (!it.fromCache || fromCachePredicate(it)) {
+                    emit(it.value)
+                } else {
+                    emitAll(
+                        getRaw(params, FromCache.NEVER)
+                            .map { result -> result.value }
+                    )
+                }
+            }
+    }
+
 suspend fun <P : Any, T : Any> CachedSource<P, T>.requestAndObserve(
     params: P,
     requestRetryCount: Long = 2,
