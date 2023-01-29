@@ -27,7 +27,7 @@ suspend fun <P : Any, T : Any> CachedSource<P, T>.getOrRequest(
             }
     }
 
-suspend fun <P : Any, T : Any> CachedSource<P, T>.requestAndObserve(
+suspend fun <P : Any, T : Any> CachedSource<P, T>.observeAndRequest(
     params: P,
     requestRetryCount: Long = 2,
 ): Flow<T> =

@@ -60,7 +60,7 @@ internal class CachedSourceExtTest {
     }
 
     @Test
-    fun `requestAndObserve + 3 emits with same key + 2 emits with different key = All needed are collected`() = runTest {
+    fun `observeAndRequest + 3 emits with same key + 2 emits with different key = All needed are collected`() = runTest {
         val collected = mutableListOf<Int>()
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<String, Int>(source = {
@@ -69,7 +69,7 @@ internal class CachedSourceExtTest {
         // Let's imagine we have CountDownLatch in Kotlin.
         val mutexUntilFirstEmit = Mutex(locked = true)
         val a = async {
-            source.requestAndObserve("1")
+            source.observeAndRequest("1")
                 .take(4)
                 .onEach {
                     if (mutexUntilFirstEmit.isLocked) {
@@ -97,7 +97,7 @@ internal class CachedSourceExtTest {
     }
 
     @Test
-    fun `requestAndObserve + 3 emits + 2 emits different key + error = All needed are collected`() = runTest {
+    fun `observeAndRequest + 3 emits + 2 emits different key + error = All needed are collected`() = runTest {
         val collected = mutableListOf<Int>()
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<String, Int>(source = {
@@ -111,7 +111,7 @@ internal class CachedSourceExtTest {
         // Let's imagine we have CountDownLatch in Kotlin.
         val mutexUntilFirstEmit = Mutex(locked = true)
         val a = async {
-            source.requestAndObserve("1")
+            source.observeAndRequest("1")
                 .take(3)
                 .onEach {
                     if (mutexUntilFirstEmit.isLocked) {
