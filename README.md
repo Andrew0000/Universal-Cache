@@ -15,7 +15,7 @@ with a lot of independent components which may use same API-endpoints at the nea
 Basic case:  
 
 ```kotlin
-private val cachedSource = CachedSource<String, Int>(
+val cachedSource = CachedSource<String, Int>(
     source = { params -> api.getSomething(params) }
 )
 
@@ -26,11 +26,69 @@ scope.launch {
         }
 }
 ```
-Main entities:  
-**CachedSource** - is a wrapper for your data source (usually api call or db-request). Provides Flow of data or errors in several ways.  
-**FromCache** - is an enum with request options like **FromCache.IF_HAVE** and other.  
-**Requester** - is a wrapper that can share ongoing request(s). It's used in **CachedSource** but you can use it independently.  
-**Cache** - is an interface for a how you store your cache. There is default in-memory implementation **MemoryCache**.  
+
+### CachedSource  
+Wrapper for your data source (usually API call or DB-request). Provides Flow of data or errors in several ways.  
+Construct it with your data source and optional parameters:  
+```
+val cachedSource = CachedSource<P, T>(
+    source = { api.getSomething() },
+    cache = ...,
+    timeProvider = ...,
+    dispatcher = ...,
+)
+```
+Use `.get()` or `.getRaw()` function with a variety of options to get a Flow of cached / loaded data:
+```
+cachedSource
+    .get(
+        params = ...,
+        fromCache = ...,
+        shareOngoingRequest = ...,
+        maxAge = ...,
+        additionalKey = ...,
+    )
+    .collect {
+        ...
+    }
+```
+Use `.updates` and `.errors` (SharedFlow) to observe all updates and errors without `.get()`:
+```
+cachedSource.updates
+    .collect { (params, result) ->
+        ...
+    }
+```
+
+### FromCache
+Enum with request options:
+```
+FromCache.NEVER
+FromCache.IF_FAILED
+FromCache.IF_HAVE
+FromCache.CACHED_THEN_LOAD
+```
+
+### Requester  
+Wrapper that can share ongoing request(s) if there is any in progress with the given params.  
+It's used in **CachedSource** but you can use it independently.  
+```
+val requester = Requester(source)
+...
+requester.requestShared("some request params")
+    .collect{
+        ...
+    }
+```
+
+### Cache  
+Interface for a how you store your cache. There is default in-memory implementation **MemoryCache**.  
+Main functions:
+```
+get(params: P, additionalKey: Any?): CachedData<T>?
+
+put(value: T, params: P, additionalKey: Any?, time: Long)
+```
 
 # Setup:  
 
