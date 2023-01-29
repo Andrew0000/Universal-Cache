@@ -21,6 +21,71 @@ internal class CachedSourceTest {
     }
 
     @Test
+    fun `FromCache ONLY + no cache = Exception`() = runTest {
+        var collected = -1
+        var caught = false
+        val source = CachedSource<Unit, Int>(source = { 1 })
+        source.get(Unit, fromCache = FromCache.ONLY)
+            .catch {
+                caught = true
+            }
+            .collect {
+                collected = it
+            }
+
+        Assert.assertTrue(caught)
+        Assert.assertEquals(-1, collected)
+        Assert.assertEquals(0, source.getOngoingSize())
+    }
+
+    @Test
+    fun `FromCache ONLY + have cache = Get cached`() = runTest {
+        var collected: CachedSourceResult<Int>? = null
+        var caught = false
+        val source = CachedSource<Unit, Int>(
+            source = { 2 },
+            timeProvider = zeroTimeProvider(),
+        )
+        source.get(Unit, fromCache = FromCache.NEVER)
+            .collect {
+                // Cache warm-up
+            }
+        source.getRaw(Unit, fromCache = FromCache.ONLY)
+            .catch {
+                caught = true
+            }
+            .collect {
+                collected = it
+            }
+
+        Assert.assertFalse(caught)
+        Assert.assertEquals(CachedSourceResult(2, fromCache = true, originTimeStamp = 0), collected)
+        Assert.assertEquals(0, source.getOngoingSize())
+    }
+
+    @Test
+    fun `FromCache ONLY + have cache but old for maxAge = Exception`() = runTest {
+        var collected = -1
+        var caught = false
+        val source = CachedSource<Unit, Int>(source = { 2 })
+        source.get(Unit, fromCache = FromCache.NEVER)
+            .collect {
+                // Cache warm-up
+            }
+        source.get(Unit, fromCache = FromCache.ONLY, maxAge = 0)
+            .catch {
+                caught = true
+            }
+            .collect {
+                collected = it
+            }
+
+        Assert.assertTrue(caught)
+        Assert.assertEquals(-1, collected)
+        Assert.assertEquals(0, source.getOngoingSize())
+    }
+
+    @Test
     fun `FromCache NEVER + 1 request`() = runTest {
         var collected = -1
         val source = CachedSource<Unit, Int>(source = { 1 })

@@ -118,6 +118,15 @@ class CachedSource<P : Any, T : Any>(
                     }
                 }
 
+                FromCache.ONLY -> {
+                    val cached = getFromCache(params, additionalKey, maxAge)
+                    if (cached != null) {
+                        flow { emit(CachedSourceResult(cached.value, fromCache = true, originTimeStamp = cached.time)) }
+                    } else {
+                        flow { throw NullPointerException("Cache is empty") }
+                    }
+                }
+
                 FromCache.CACHED_THEN_LOAD -> {
                     val cached = getFromCache(params, additionalKey, maxAge)
                     Logger.log { "get FROM_CACHE_THEN_LOAD: $params / cached: $cached" }
