@@ -1,6 +1,7 @@
 package crocodile8.universal_cache.request
 
 import crocodile8.universal_cache.CachedSourceNoParams
+import crocodile8.universal_cache.utils.BooleanRef
 import crocodile8.universal_cache.utils.Logger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -55,7 +56,7 @@ class Requester<P : Any, T : Any>(
 
                 if (ongoingFlow == null) {
                     val scope = CoroutineScope(dispatcher)
-                    var isInOngoings = true
+                    val isInOngoings = BooleanRef(true)
                     ongoingFlow =
                         flow { emit(source(params)) }
                             .flowOn(dispatcher)
@@ -66,17 +67,11 @@ class Requester<P : Any, T : Any>(
                                 // It's better to release ongoing earlier then .onCompletion()
                                 // but only .onCompletion() will be called on cancellation
                                 // so try in both places
-                                if (isInOngoings) {
-                                    isInOngoings = false
-                                    removeOngoing(params)
-                                }
+                                removeOngoing(params, isInOngoings)
                             }
                             .onCompletion {
                                 Logger.log { "requestShared onCompletion: $params" }
-                                if (isInOngoings) {
-                                    isInOngoings = false
-                                    removeOngoing(params)
-                                }
+                                removeOngoing(params, isInOngoings)
                                 scope.cancel()
                             }
                             .shareIn(
@@ -110,12 +105,15 @@ class Requester<P : Any, T : Any>(
             size
         }
 
-    private suspend fun removeOngoing(params: P) =
+    private suspend fun removeOngoing(params: P, isInOngoings: BooleanRef) =
         withContext(NonCancellable) {
             try {
                 ongoingsLock.withLock {
-                    ongoings.remove(params)
-                    Logger.log { "requestShared removeOngoing: $params, size: ${ongoings.size}" }
+                    if (isInOngoings.value) {
+                        ongoings.remove(params)
+                        isInOngoings.value = false
+                        Logger.log { "requestShared removeOngoing: $params, size: ${ongoings.size}" }
+                    }
                 }
             } catch (t: Throwable) {
                 Logger.log { "requestShared removeOngoing -> error in lock: $t" }
