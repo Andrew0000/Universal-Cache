@@ -21,8 +21,11 @@ val cachedSource = CachedSource<String, Int>(
 
 scope.launch {
     cachedSource.get("some request parameter", FromCache.CACHED_THEN_LOAD, maxAge = 5_000)
+        .catch { 
+            // Handle error if needed
+        }
         .collect {
-            // Use received values
+            // Use received value(s)
         }
 }
 ```
