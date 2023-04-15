@@ -38,10 +38,13 @@ internal class CachedSourceWithMultipleParamsTest {
         var collected1 = -1
         var collected2 = -1
         var collected3 = -1
-        val source = CachedSource<String, Int>(source = {
-            delay(100)
-            it.toInt()
-        })
+        val source = CachedSource<String, Int>(
+            source = {
+                delay(100)
+                it.toInt()
+            },
+            dispatcher = getTestDispatcher(),
+        )
 
         action {
             val a1 = async {
@@ -78,10 +81,13 @@ internal class CachedSourceWithMultipleParamsTest {
         var collected5 = -1
         var collected6 = -1
         val sourceInvocationCnt = listOf(AtomicInteger(), AtomicInteger(1), AtomicInteger(2), AtomicInteger(3))
-        val source = CachedSource<String, Int>(source = {
-            delay(200)
-            sourceInvocationCnt[it.toInt() - 1].incrementAndGet()
-        })
+        val source = CachedSource<String, Int>(
+            source = {
+                delay(200)
+                sourceInvocationCnt[it.toInt() - 1].incrementAndGet()
+            },
+            dispatcher = getTestDispatcher(),
+        )
 
         action {
             val a1 = async {
@@ -263,6 +269,7 @@ internal class CachedSourceWithMultipleParamsTest {
                 }
             },
             cache = MemoryCache(2),
+            dispatcher = getTestDispatcher(),
         )
 
         action {

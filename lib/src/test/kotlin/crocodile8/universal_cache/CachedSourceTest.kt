@@ -104,10 +104,13 @@ internal class CachedSourceTest {
         var collected2 = -1
         var collected3 = -1
         val sourceInvocationCnt = AtomicInteger()
-        val source = CachedSource<Unit, Int>(source = {
-            delay(50) // Delay to allow several requests attach to the same ongoing
-            sourceInvocationCnt.incrementAndGet()
-        })
+        val source = CachedSource<Unit, Int>(
+            source = {
+                delay(50) // Delay to allow several requests attach to the same ongoing
+                sourceInvocationCnt.incrementAndGet()
+            },
+            dispatcher = getTestDispatcher(),
+        )
 
         action {
             val a1 = async {
@@ -186,10 +189,13 @@ internal class CachedSourceTest {
         var collected5 = -1
         var collected6 = -1
         val sourceInvocationCnt = AtomicInteger()
-        val source = CachedSource<Unit, Int>(source = {
-            delay(50) // Delay to allow several requests attach to the same ongoing
-            sourceInvocationCnt.incrementAndGet()
-        })
+        val source = CachedSource<Unit, Int>(
+            source = {
+                delay(50) // Delay to allow several requests attach to the same ongoing
+                sourceInvocationCnt.incrementAndGet()
+            },
+            dispatcher = getTestDispatcher(),
+        )
 
         action {
             val a1 = async {
@@ -346,14 +352,17 @@ internal class CachedSourceTest {
     fun `FromCache IF_HAVE + 1 success + 1 failure + create flows at the same time = Get cached, laziness works`() = runTest {
         var collected = -1
         val sourceInvocationCnt = AtomicInteger()
-        val source = CachedSource<Unit, Int>(source = {
-            delay(100)
-            if (sourceInvocationCnt.incrementAndGet() == 1) {
-                1
-            } else {
-                throw RuntimeException()
-            }
-        })
+        val source = CachedSource<Unit, Int>(
+            source = {
+                delay(100)
+                if (sourceInvocationCnt.incrementAndGet() == 1) {
+                    1
+                } else {
+                    throw RuntimeException()
+                }
+            },
+            dispatcher = getTestDispatcher(),
+        )
 
         action {
             val sourceFlow1 = source.get(Unit, fromCache = FromCache.IF_HAVE, shareOngoingRequest = false)
@@ -384,6 +393,7 @@ internal class CachedSourceTest {
                 }
             },
             timeProvider = zeroTimeProvider(),
+            dispatcher = getTestDispatcher(),
         )
 
         action {

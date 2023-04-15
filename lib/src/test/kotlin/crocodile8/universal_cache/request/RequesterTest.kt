@@ -4,6 +4,7 @@ import crocodile8.universal_cache.UniversalCache
 import crocodile8.universal_cache.action
 import crocodile8.universal_cache.assert
 import crocodile8.universal_cache.assertNoOngoings
+import crocodile8.universal_cache.getTestDispatcher
 import crocodile8.universal_cache.result
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -31,14 +32,14 @@ internal class RequesterTest {
 
         action {
             val a1 = async {
-                requester.requestShared("1").collect {}
+                requester.requestShared("1", dispatcher = getTestDispatcher()).collect {}
             }
             a1.await()
             val a2 = async {
-                requester.requestShared("1").collect {}
+                requester.requestShared("1", dispatcher = getTestDispatcher()).collect {}
             }
             val a3 = async {
-                requester.requestShared("1").collect {}
+                requester.requestShared("1", dispatcher = getTestDispatcher()).collect {}
             }
             a2.await()
             a3.await()
@@ -57,7 +58,7 @@ internal class RequesterTest {
             delay(100)
             sourceInvocationCnt.incrementAndGet()
         })
-        val flow = requester.requestShared("1")
+        val flow = requester.requestShared("1", dispatcher = getTestDispatcher())
 
         action {
             val a1 = async {
@@ -93,17 +94,17 @@ internal class RequesterTest {
 
         action {
             val a1 = async {
-                requester.requestShared("1").collect {}
+                requester.requestShared("1", dispatcher = getTestDispatcher()).collect {}
             }
             a1.await()
             val a2 = async {
-                requester.requestShared("1").collect {}
+                requester.requestShared("1", dispatcher = getTestDispatcher()).collect {}
             }
             val a3 = async {
-                requester.requestShared("2").collect {}
+                requester.requestShared("2", dispatcher = getTestDispatcher()).collect {}
             }
             val a4 = async {
-                requester.requestShared("1").collect {}
+                requester.requestShared("1", dispatcher = getTestDispatcher()).collect {}
             }
             a2.await()
             a3.await()
@@ -127,8 +128,8 @@ internal class RequesterTest {
             delay(100)
             sourceInvocationCnt[it]!!.incrementAndGet()
         })
-        val flow1 = requester.requestShared("1")
-        val flow2 = requester.requestShared("2")
+        val flow1 = requester.requestShared("1", dispatcher = getTestDispatcher())
+        val flow2 = requester.requestShared("2", dispatcher = getTestDispatcher())
 
         action {
             val a1 = async {
