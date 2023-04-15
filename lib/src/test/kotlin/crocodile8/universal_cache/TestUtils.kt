@@ -56,8 +56,8 @@ infix fun <T> List<T>.assertAnyOrder(expectedList: List<T>) {
     Assert.assertTrue(this.containsAll(expectedList))
 }
 
-infix fun AtomicInteger.assert(expected: Int) {
-    this.get().assert(expected)
+infix fun AtomicInteger?.assert(expected: Int) {
+    this?.get().assert(expected)
 }
 
 infix fun Int?.assert(expected: Int) {
