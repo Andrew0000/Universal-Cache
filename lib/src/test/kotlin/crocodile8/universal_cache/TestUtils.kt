@@ -2,6 +2,8 @@ package crocodile8.universal_cache
 
 import crocodile8.universal_cache.request.Requester
 import crocodile8.universal_cache.time.TimeProvider
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.test.TestScope
 import org.junit.Assert
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -58,3 +60,8 @@ infix fun Boolean?.assert(expected: Boolean) {
 infix fun <T : Any> CachedSourceResult<T>?.assert(another: CachedSourceResult<T>) {
     Assert.assertEquals(another, this)
 }
+
+@OptIn(ExperimentalStdlibApi::class)
+@Suppress("OPT_IN_USAGE")
+fun TestScope.getTestDispatcher() =
+    coroutineContext[CoroutineDispatcher.Key] as CoroutineDispatcher

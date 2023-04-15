@@ -123,10 +123,13 @@ internal class CachedSourceTest {
         var collected2 = -1
         var collected3 = -1
         val sourceInvocationCnt = AtomicInteger()
-        val source = CachedSource<Unit, Int>(source = {
-            delay(20) // Delay to allow several requests attach to the same ongoing
-            sourceInvocationCnt.incrementAndGet()
-        })
+        val source = CachedSource<Unit, Int>(
+            source = {
+                delay(20) // Delay to allow several requests attach to the same ongoing
+                sourceInvocationCnt.incrementAndGet()
+            },
+            dispatcher = getTestDispatcher(),
+        )
 
         val a1 = async {
             source.get(Unit, fromCache = FromCache.NEVER, shareOngoingRequest = false)
