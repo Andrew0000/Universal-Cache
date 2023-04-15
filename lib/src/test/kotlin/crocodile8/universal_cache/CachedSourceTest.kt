@@ -76,11 +76,11 @@ internal class CachedSourceTest {
     fun `FromCache NEVER + 1 request`() = runTest {
         var collected = -1
         val source = CachedSource<Unit, Int>(source = { 1 })
+
         source.get(Unit, fromCache = FromCache.NEVER)
-            .collect {
-                collected = it
-            }
-        Assert.assertEquals(1, collected)
+            .collect { collected = it }
+
+        collected assert 1
         source.assertNoOngoings()
     }
 
@@ -91,33 +91,29 @@ internal class CachedSourceTest {
         var collected3 = -1
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(source = {
-            delay(200)
+            delay(20) // Delay to allow several requests attach to the same ongoing
             sourceInvocationCnt.incrementAndGet()
         })
+
         val a1 = async {
             source.get(Unit, fromCache = FromCache.NEVER)
-                .collect {
-                    collected1 = it
-                }
+                .collect { collected1 = it }
         }
         val a2 = async {
             source.get(Unit, fromCache = FromCache.NEVER)
-                .collect {
-                    collected2 = it
-                }
+                .collect { collected2 = it }
         }
         val a3 = async {
             source.get(Unit, fromCache = FromCache.NEVER)
-                .collect {
-                    collected3 = it
-                }
+                .collect { collected3 = it }
         }
         a1.await()
         a2.await()
         a3.await()
-        Assert.assertEquals(1, collected1)
-        Assert.assertEquals(1, collected2)
-        Assert.assertEquals(1, collected3)
+
+        collected1 assert 1
+        collected2 assert 1
+        collected3 assert 1
         source.assertNoOngoings()
     }
 
@@ -131,60 +127,49 @@ internal class CachedSourceTest {
         var collected6 = -1
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(source = {
-            delay(200)
+            delay(20) // Delay to allow several requests attach to the same ongoing
             sourceInvocationCnt.incrementAndGet()
         })
+
         val a1 = async {
             source.get(Unit, fromCache = FromCache.NEVER)
-                .collect {
-                    collected1 = it
-                }
+                .collect { collected1 = it }
         }
         val a2 = async {
             source.get(Unit, fromCache = FromCache.NEVER)
-                .collect {
-                    collected2 = it
-                }
+                .collect { collected2 = it }
         }
         val a3 = async {
-            Thread.sleep(100) // Emulate real heavy operation that blocks thread
             source.get(Unit, fromCache = FromCache.NEVER)
-                .collect {
-                    collected3 = it
-                }
+                .collect { collected3 = it }
         }
         a1.await()
         a2.await()
         a3.await()
-        Assert.assertEquals(1, collected1)
-        Assert.assertEquals(1, collected2)
-        Assert.assertEquals(1, collected3)
+
+        collected1 assert 1
+        collected2 assert 1
+        collected3 assert 1
 
         val a4 = async {
             source.get(Unit, fromCache = FromCache.NEVER)
-                .collect {
-                    collected4 = it
-                }
+                .collect { collected4 = it }
         }
         val a5 = async {
             source.get(Unit, fromCache = FromCache.NEVER)
-                .collect {
-                    collected5 = it
-                }
+                .collect { collected5 = it }
         }
         val a6 = async {
-            Thread.sleep(100) // Emulate real heavy operation that blocks thread
             source.get(Unit, fromCache = FromCache.NEVER)
-                .collect {
-                    collected6 = it
-                }
+                .collect { collected6 = it }
         }
         a4.await()
         a5.await()
         a6.await()
-        Assert.assertEquals(2, collected4)
-        Assert.assertEquals(2, collected5)
-        Assert.assertEquals(2, collected6)
+
+        collected4 assert 2
+        collected5 assert 2
+        collected6 assert 2
         source.assertNoOngoings()
     }
 
