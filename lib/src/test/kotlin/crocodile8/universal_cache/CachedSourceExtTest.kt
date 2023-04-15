@@ -87,12 +87,7 @@ internal class CachedSourceExtTest {
         a.await()
         println("collected: $collected")
 
-        // Order is not guaranteed so check result in this way
-        Assert.assertEquals(4, collected.size)
-        Assert.assertTrue(collected.contains(1))
-        Assert.assertTrue(collected.contains(2))
-        Assert.assertTrue(collected.contains(5))
-        Assert.assertTrue(collected.contains(6))
+        collected.assertContainsInAnyOrder(1, 2, 5, 6)
         source.assertNoOngoings()
     }
 
@@ -129,11 +124,7 @@ internal class CachedSourceExtTest {
         a.await()
         println("collected: $collected")
 
-        // Order is not guaranteed so check result in this way
-        Assert.assertEquals(3, collected.size)
-        Assert.assertTrue(collected.contains(1))
-        Assert.assertTrue(collected.contains(5))
-        Assert.assertTrue(collected.contains(6))
+        collected.assertContainsInAnyOrder(1, 5, 6)
         source.assertNoOngoings()
     }
 

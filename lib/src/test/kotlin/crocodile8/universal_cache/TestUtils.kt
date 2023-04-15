@@ -10,3 +10,10 @@ suspend fun <P: Any, T: Any> CachedSource<P, T>.assertNoOngoings() {
 suspend fun <P: Any, T: Any> Requester<P, T>.assertNoOngoings() {
     Assert.assertEquals(0, getOngoingSize())
 }
+
+fun <T> List<T>.assertContainsInAnyOrder(vararg args: T) {
+    val expectedList = args.asList()
+    Assert.assertEquals(expectedList.size, this.size)
+    Assert.assertTrue(expectedList.containsAll(this))
+    Assert.assertTrue(this.containsAll(expectedList))
+}
