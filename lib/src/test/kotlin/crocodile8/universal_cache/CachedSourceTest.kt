@@ -85,7 +85,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache NEVER + 3 parallel`() = runTest {
+    fun `FromCache NEVER + 3 parallel = Receive from the same ongoing`() = runTest {
         var collected1 = -1
         var collected2 = -1
         var collected3 = -1
@@ -118,7 +118,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache NEVER + 3 parallel + 3 parallel`() = runTest {
+    fun `FromCache NEVER + 3 parallel + 3 parallel = First 3 receive from 1st ongoing, Second 3 receive from 2nd ongoing`() = runTest {
         var collected1 = -1
         var collected2 = -1
         var collected3 = -1
@@ -174,7 +174,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache IF_FAILED + 1 success`() = runTest {
+    fun `FromCache IF_FAILED + 1 success = Get not from cache`() = runTest {
         var collected: CachedSourceResult<Int>? = null
         val source = CachedSource<Unit, Int>(source = { 1 })
 
