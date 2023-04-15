@@ -38,13 +38,6 @@ infix fun <T> List<T>.assertContainsAnyOrder(expectedList: List<T>) {
     Assert.assertTrue(this.containsAll(expectedList))
 }
 
-fun <T> List<T>.assertContainsInAnyOrder(vararg args: T) {
-    val expectedList = args.asList()
-    Assert.assertEquals(expectedList.size, this.size)
-    Assert.assertTrue(expectedList.containsAll(this))
-    Assert.assertTrue(this.containsAll(expectedList))
-}
-
 infix fun AtomicInteger.assert(expected: Int) {
     this.get().assert(expected)
 }
