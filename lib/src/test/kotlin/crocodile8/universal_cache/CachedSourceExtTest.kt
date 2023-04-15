@@ -37,7 +37,7 @@ internal class CachedSourceExtTest {
         Assert.assertEquals(1, collected)
         // 1 from a cache warm-up
         Assert.assertEquals(1, sourceInvocationCnt.get())
-        Assert.assertEquals(0, source.getOngoingSize())
+        source.assertNoOngoings()
     }
 
     @Test
@@ -56,7 +56,7 @@ internal class CachedSourceExtTest {
         Assert.assertEquals(2, collected)
         // 1 from a cache warm-up + 1 new request after predicate returned false
         Assert.assertEquals(2, sourceInvocationCnt.get())
-        Assert.assertEquals(0, source.getOngoingSize())
+        source.assertNoOngoings()
     }
 
     @Test
@@ -93,7 +93,7 @@ internal class CachedSourceExtTest {
         Assert.assertTrue(collected.contains(2))
         Assert.assertTrue(collected.contains(5))
         Assert.assertTrue(collected.contains(6))
-        Assert.assertEquals(0, source.getOngoingSize())
+        source.assertNoOngoings()
     }
 
     @Test
@@ -134,7 +134,7 @@ internal class CachedSourceExtTest {
         Assert.assertTrue(collected.contains(1))
         Assert.assertTrue(collected.contains(5))
         Assert.assertTrue(collected.contains(6))
-        Assert.assertEquals(0, source.getOngoingSize())
+        source.assertNoOngoings()
     }
 
 }

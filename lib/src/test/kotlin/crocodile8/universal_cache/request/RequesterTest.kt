@@ -1,6 +1,7 @@
 package crocodile8.universal_cache.request
 
 import crocodile8.universal_cache.UniversalCache
+import crocodile8.universal_cache.assertNoOngoings
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -39,7 +40,7 @@ internal class RequesterTest {
         a3.await()
 
         Assert.assertEquals(2, sourceInvocationCnt.get())
-        Assert.assertEquals(0, requester.getOngoingSize())
+        requester.assertNoOngoings()
     }
 
     @Test
@@ -64,7 +65,7 @@ internal class RequesterTest {
         a3.await()
 
         Assert.assertEquals(2, sourceInvocationCnt.get())
-        Assert.assertEquals(0, requester.getOngoingSize())
+        requester.assertNoOngoings()
     }
 
     @Test
@@ -96,7 +97,7 @@ internal class RequesterTest {
 
         Assert.assertEquals(2, sourceInvocationCnt["1"]?.get())
         Assert.assertEquals(1, sourceInvocationCnt["2"]?.get())
-        Assert.assertEquals(0, requester.getOngoingSize())
+        requester.assertNoOngoings()
     }
 
     @Test
@@ -130,7 +131,7 @@ internal class RequesterTest {
 
         Assert.assertEquals(2, sourceInvocationCnt["1"]?.get())
         Assert.assertEquals(1, sourceInvocationCnt["2"]?.get())
-        Assert.assertEquals(0, requester.getOngoingSize())
+        requester.assertNoOngoings()
     }
 
 }
