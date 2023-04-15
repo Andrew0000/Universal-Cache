@@ -12,6 +12,9 @@ import crocodile8.universal_cache.get
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
 
+/**
+ * It's a sample application. Library code is in another module.
+ */
 @SuppressLint("SetTextI18n")
 class MainActivity : AppCompatActivity() {
 
@@ -32,11 +35,11 @@ class MainActivity : AppCompatActivity() {
         textView1 = findViewById(R.id.textView_1)
         textView2 = findViewById(R.id.textView_2)
 
-        launchAndObserveParallelRequests(textView1)
+        launchAndObserveParallelRequests()
         observeUpdates()
     }
 
-    private fun launchAndObserveParallelRequests(textView1: TextView) {
+    private fun launchAndObserveParallelRequests() {
         lifecycleScope.launch {
             source.get(FromCache.IF_HAVE)
                 .collect {
