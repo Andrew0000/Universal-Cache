@@ -24,6 +24,20 @@ object TestUtils {
     }
 }
 
+/**
+ * Should contain 'When' statement from Given-When-Then.
+ */
+suspend fun action(block: suspend () -> Unit) {
+    block()
+}
+
+/**
+ * Should contain 'Then' statement from Given-When-Then.
+ */
+suspend fun result(block: suspend () -> Unit) {
+    block()
+}
+
 suspend fun <P : Any, T : Any> CachedSource<P, T>.assertNoOngoings() {
     Assert.assertEquals(0, getOngoingSize())
 }

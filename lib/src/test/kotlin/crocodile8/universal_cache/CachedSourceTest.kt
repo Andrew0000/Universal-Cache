@@ -25,13 +25,17 @@ internal class CachedSourceTest {
         var caught = false
         val source = CachedSource<Unit, Int>(source = { 1 })
 
-        source.get(Unit, fromCache = FromCache.ONLY)
-            .catch { caught = true }
-            .collect { collected = it }
+        action {
+            source.get(Unit, fromCache = FromCache.ONLY)
+                .catch { caught = true }
+                .collect { collected = it }
+        }
 
-        caught assert true
-        collected assert -1
-        source.assertNoOngoings()
+        result {
+            caught assert true
+            collected assert -1
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -43,15 +47,19 @@ internal class CachedSourceTest {
             timeProvider = zeroTimeProvider(),
         )
 
-        source.get(Unit, fromCache = FromCache.NEVER)
-            .collect { /* Cache warm-up */ }
-        source.getRaw(Unit, fromCache = FromCache.ONLY)
-            .catch { caught = true }
-            .collect { collected = it }
+        action {
+            source.get(Unit, fromCache = FromCache.NEVER)
+                .collect { /* Cache warm-up */ }
+            source.getRaw(Unit, fromCache = FromCache.ONLY)
+                .catch { caught = true }
+                .collect { collected = it }
+        }
 
-        caught assert false
-        collected assert CachedSourceResult(2, fromCache = true, originTimeStamp = 0)
-        source.assertNoOngoings()
+        result {
+            caught assert false
+            collected assert CachedSourceResult(2, fromCache = true, originTimeStamp = 0)
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -60,15 +68,19 @@ internal class CachedSourceTest {
         var caught = false
         val source = CachedSource<Unit, Int>(source = { 2 })
 
-        source.get(Unit, fromCache = FromCache.NEVER)
-            .collect { /* Cache warm-up */ }
-        source.get(Unit, fromCache = FromCache.ONLY, maxAge = 0)
-            .catch { caught = true }
-            .collect { collected = it }
+        action {
+            source.get(Unit, fromCache = FromCache.NEVER)
+                .collect { /* Cache warm-up */ }
+            source.get(Unit, fromCache = FromCache.ONLY, maxAge = 0)
+                .catch { caught = true }
+                .collect { collected = it }
+        }
 
-        caught assert true
-        collected assert -1
-        source.assertNoOngoings()
+        result {
+            caught assert true
+            collected assert -1
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -76,11 +88,15 @@ internal class CachedSourceTest {
         var collected = -1
         val source = CachedSource<Unit, Int>(source = { 1 })
 
-        source.get(Unit, fromCache = FromCache.NEVER)
-            .collect { collected = it }
+        action {
+            source.get(Unit, fromCache = FromCache.NEVER)
+                .collect { collected = it }
+        }
 
-        collected assert 1
-        source.assertNoOngoings()
+        result {
+            collected assert 1
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -94,26 +110,30 @@ internal class CachedSourceTest {
             sourceInvocationCnt.incrementAndGet()
         })
 
-        val a1 = async {
-            source.get(Unit, fromCache = FromCache.NEVER)
-                .collect { collected1 = it }
+        action {
+            val a1 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected1 = it }
+            }
+            val a2 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected2 = it }
+            }
+            val a3 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected3 = it }
+            }
+            a1.await()
+            a2.await()
+            a3.await()
         }
-        val a2 = async {
-            source.get(Unit, fromCache = FromCache.NEVER)
-                .collect { collected2 = it }
-        }
-        val a3 = async {
-            source.get(Unit, fromCache = FromCache.NEVER)
-                .collect { collected3 = it }
-        }
-        a1.await()
-        a2.await()
-        a3.await()
 
-        collected1 assert 1
-        collected2 assert 1
-        collected3 assert 1
-        source.assertNoOngoings()
+        result {
+            collected1 assert 1
+            collected2 assert 1
+            collected3 assert 1
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -130,28 +150,32 @@ internal class CachedSourceTest {
             dispatcher = getTestDispatcher(),
         )
 
-        val a1 = async {
-            source.get(Unit, fromCache = FromCache.NEVER, shareOngoingRequest = false)
-                .collect { collected1 = it }
+        action {
+            val a1 = async {
+                source.get(Unit, fromCache = FromCache.NEVER, shareOngoingRequest = false)
+                    .collect { collected1 = it }
+            }
+            val a2 = async {
+                delay(5) // Ensure order of results
+                source.get(Unit, fromCache = FromCache.NEVER, shareOngoingRequest = false)
+                    .collect { collected2 = it }
+            }
+            val a3 = async {
+                delay(10) // Ensure order of results
+                source.get(Unit, fromCache = FromCache.NEVER, shareOngoingRequest = false)
+                    .collect { collected3 = it }
+            }
+            a1.await()
+            a2.await()
+            a3.await()
         }
-        val a2 = async {
-            delay(5) // Ensure order of results
-            source.get(Unit, fromCache = FromCache.NEVER, shareOngoingRequest = false)
-                .collect { collected2 = it }
-        }
-        val a3 = async {
-            delay(10) // Ensure order of results
-            source.get(Unit, fromCache = FromCache.NEVER, shareOngoingRequest = false)
-                .collect { collected3 = it }
-        }
-        a1.await()
-        a2.await()
-        a3.await()
 
-        collected1 assert 1
-        collected2 assert 2
-        collected3 assert 3
-        source.assertNoOngoings()
+        result {
+            collected1 assert 1
+            collected2 assert 2
+            collected3 assert 3
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -168,44 +192,48 @@ internal class CachedSourceTest {
             sourceInvocationCnt.incrementAndGet()
         })
 
-        val a1 = async {
-            source.get(Unit, fromCache = FromCache.NEVER)
-                .collect { collected1 = it }
+        action {
+            val a1 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected1 = it }
+            }
+            val a2 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected2 = it }
+            }
+            val a3 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected3 = it }
+            }
+            a1.await()
+            a2.await()
+            a3.await()
+            val a4 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected4 = it }
+            }
+            val a5 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected5 = it }
+            }
+            val a6 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected6 = it }
+            }
+            a4.await()
+            a5.await()
+            a6.await()
         }
-        val a2 = async {
-            source.get(Unit, fromCache = FromCache.NEVER)
-                .collect { collected2 = it }
-        }
-        val a3 = async {
-            source.get(Unit, fromCache = FromCache.NEVER)
-                .collect { collected3 = it }
-        }
-        a1.await()
-        a2.await()
-        a3.await()
-        val a4 = async {
-            source.get(Unit, fromCache = FromCache.NEVER)
-                .collect { collected4 = it }
-        }
-        val a5 = async {
-            source.get(Unit, fromCache = FromCache.NEVER)
-                .collect { collected5 = it }
-        }
-        val a6 = async {
-            source.get(Unit, fromCache = FromCache.NEVER)
-                .collect { collected6 = it }
-        }
-        a4.await()
-        a5.await()
-        a6.await()
 
-        collected1 assert 1
-        collected2 assert 1
-        collected3 assert 1
-        collected4 assert 2
-        collected5 assert 2
-        collected6 assert 2
-        source.assertNoOngoings()
+        result {
+            collected1 assert 1
+            collected2 assert 1
+            collected3 assert 1
+            collected4 assert 2
+            collected5 assert 2
+            collected6 assert 2
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -213,12 +241,16 @@ internal class CachedSourceTest {
         var collected: CachedSourceResult<Int>? = null
         val source = CachedSource<Unit, Int>(source = { 1 })
 
-        source.getRaw(Unit, fromCache = FromCache.IF_FAILED)
-            .collect { collected = it }
+        action {
+            source.getRaw(Unit, fromCache = FromCache.IF_FAILED)
+                .collect { collected = it }
+        }
 
-        collected?.value assert 1
-        collected?.fromCache assert false
-        source.assertNoOngoings()
+        result {
+            collected?.value assert 1
+            collected?.fromCache assert false
+            source.assertNoOngoings()
+        }
     }
 
     @Test
