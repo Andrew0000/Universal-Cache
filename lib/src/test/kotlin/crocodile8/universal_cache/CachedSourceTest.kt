@@ -184,11 +184,6 @@ internal class CachedSourceTest {
         a1.await()
         a2.await()
         a3.await()
-
-        collected1 assert 1
-        collected2 assert 1
-        collected3 assert 1
-
         val a4 = async {
             source.get(Unit, fromCache = FromCache.NEVER)
                 .collect { collected4 = it }
@@ -205,6 +200,9 @@ internal class CachedSourceTest {
         a5.await()
         a6.await()
 
+        collected1 assert 1
+        collected2 assert 1
+        collected3 assert 1
         collected4 assert 2
         collected5 assert 2
         collected6 assert 2
