@@ -42,6 +42,6 @@ infix fun AtomicInteger.assert(expected: Int) {
     this.get().assert(expected)
 }
 
-fun Int.assert(expected: Int) {
+infix fun Int?.assert(expected: Int) {
     Assert.assertEquals(expected, this)
 }

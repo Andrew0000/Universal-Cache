@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
@@ -30,7 +29,7 @@ internal class CachedSourceExtTest {
         source.getOrRequest("1", fromCachePredicate = { true })
             .collect { collected = it }
 
-        Assert.assertEquals(1, collected)
+        collected assert 1
         invocations assert 1
         source.assertNoOngoings()
     }
@@ -45,7 +44,7 @@ internal class CachedSourceExtTest {
         source.getOrRequest("1", fromCachePredicate = { false })
             .collect { collected = it }
 
-        Assert.assertEquals(2, collected)
+        collected assert 2
         invocations assert 2
         source.assertNoOngoings()
     }
