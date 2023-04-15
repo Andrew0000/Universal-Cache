@@ -11,7 +11,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
-import java.util.concurrent.atomic.AtomicInteger
 
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class CachedSourceExtTest {
@@ -24,50 +23,41 @@ internal class CachedSourceExtTest {
     @Test
     fun `getOrRequest + have cache + predicate ok = Get from cache`() = runTest {
         var collected: Int? = null
-        val sourceInvocationCnt = AtomicInteger()
-        val source = CachedSource<String, Int>(source = {
-            sourceInvocationCnt.incrementAndGet()
-        })
+        val (source, invocations) = TestUtils.createStringIntSource()
+
         source.get("1", FromCache.NEVER)
             .collect { /* Cache warm-up */ }
-
         source.getOrRequest("1", fromCachePredicate = { true })
             .collect { collected = it }
 
         Assert.assertEquals(1, collected)
         // 1 from a cache warm-up
-        Assert.assertEquals(1, sourceInvocationCnt.get())
+        Assert.assertEquals(1, invocations.get())
         source.assertNoOngoings()
     }
 
     @Test
     fun `getOrRequest + have cache + predicate false = Request again`() = runTest {
         var collected: Int? = null
-        val sourceInvocationCnt = AtomicInteger()
-        val source = CachedSource<String, Int>(source = {
-            sourceInvocationCnt.incrementAndGet()
-        })
+        val (source, invocations) = TestUtils.createStringIntSource()
+
         source.get("1", FromCache.NEVER)
             .collect { /* Cache warm-up */ }
-
         source.getOrRequest("1", fromCachePredicate = { false })
             .collect { collected = it }
 
         Assert.assertEquals(2, collected)
         // 1 from a cache warm-up + 1 new request after predicate returned false
-        Assert.assertEquals(2, sourceInvocationCnt.get())
+        Assert.assertEquals(2, invocations.get())
         source.assertNoOngoings()
     }
 
     @Test
     fun `observeAndRequest + 3 emits with same key + 2 emits with different key = All needed are collected`() = runTest {
         val collected = mutableListOf<Int>()
-        val sourceInvocationCnt = AtomicInteger()
-        val source = CachedSource<String, Int>(source = {
-            sourceInvocationCnt.incrementAndGet()
-        })
-        // Let's imagine we have CountDownLatch in Kotlin.
+        val (source, invocations) = TestUtils.createStringIntSource()
         val mutexUntilFirstEmit = Mutex(locked = true)
+
         val a = async {
             source.observeAndRequest("1")
                 .take(4)
@@ -88,23 +78,23 @@ internal class CachedSourceExtTest {
         println("collected: $collected")
 
         collected.assertContainsInAnyOrder(1, 2, 5, 6)
+        Assert.assertEquals(6, invocations.get())
         source.assertNoOngoings()
     }
 
     @Test
     fun `observeAndRequest + 3 emits + 2 emits different key + error = All needed are collected`() = runTest {
         val collected = mutableListOf<Int>()
-        val sourceInvocationCnt = AtomicInteger()
-        val source = CachedSource<String, Int>(source = {
-            val cnt = sourceInvocationCnt.incrementAndGet()
+        val (source, invocations) = TestUtils.createStringIntSource {
+            val cnt = it.incrementAndGet()
             if (cnt == 2) {
                 throw RuntimeException()
             } else {
                 cnt
             }
-        })
-        // Let's imagine we have CountDownLatch in Kotlin.
+        }
         val mutexUntilFirstEmit = Mutex(locked = true)
+
         val a = async {
             source.observeAndRequest("1")
                 .take(3)
@@ -125,6 +115,7 @@ internal class CachedSourceExtTest {
         println("collected: $collected")
 
         collected.assertContainsInAnyOrder(1, 5, 6)
+        Assert.assertEquals(6, invocations.get())
         source.assertNoOngoings()
     }
 
