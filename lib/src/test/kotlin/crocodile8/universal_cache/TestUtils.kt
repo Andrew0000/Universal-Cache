@@ -50,7 +50,7 @@ infix fun <T> List<T>.assert(expectedList: List<T>) {
     Assert.assertEquals(expectedList, this)
 }
 
-infix fun <T> List<T>.assertContainsAnyOrder(expectedList: List<T>) {
+infix fun <T> List<T>.assertAnyOrder(expectedList: List<T>) {
     Assert.assertEquals(expectedList.size, this.size)
     Assert.assertTrue(expectedList.containsAll(this))
     Assert.assertTrue(this.containsAll(expectedList))

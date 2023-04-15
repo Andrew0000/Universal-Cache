@@ -81,7 +81,7 @@ internal class CachedSourceExtTest {
         }
 
         result {
-            collected assertContainsAnyOrder listOf(1, 2, 5, 6)
+            collected assertAnyOrder listOf(1, 2, 5, 6)
             invocations assert 6
             source.assertNoOngoings()
         }
@@ -118,7 +118,7 @@ internal class CachedSourceExtTest {
         }
 
         result {
-            collected assertContainsAnyOrder listOf(1, 5, 6)
+            collected assertAnyOrder listOf(1, 5, 6)
             invocations assert 6
             source.assertNoOngoings()
         }
