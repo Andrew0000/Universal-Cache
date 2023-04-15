@@ -118,6 +118,41 @@ internal class CachedSourceTest {
     }
 
     @Test
+    fun `FromCache NEVER + 3 parallel + don't share = Receive different values`() = runTest {
+        var collected1 = -1
+        var collected2 = -1
+        var collected3 = -1
+        val sourceInvocationCnt = AtomicInteger()
+        val source = CachedSource<Unit, Int>(source = {
+            delay(20) // Delay to allow several requests attach to the same ongoing
+            sourceInvocationCnt.incrementAndGet()
+        })
+
+        val a1 = async {
+            source.get(Unit, fromCache = FromCache.NEVER, shareOngoingRequest = false)
+                .collect { collected1 = it }
+        }
+        val a2 = async {
+            delay(5) // Ensure order of results
+            source.get(Unit, fromCache = FromCache.NEVER, shareOngoingRequest = false)
+                .collect { collected2 = it }
+        }
+        val a3 = async {
+            delay(10) // Ensure order of results
+            source.get(Unit, fromCache = FromCache.NEVER, shareOngoingRequest = false)
+                .collect { collected3 = it }
+        }
+        a1.await()
+        a2.await()
+        a3.await()
+
+        collected1 assert 1
+        collected2 assert 2
+        collected3 assert 3
+        source.assertNoOngoings()
+    }
+
+    @Test
     fun `FromCache NEVER + 3 parallel + 3 parallel = First 3 receive from 1st ongoing, Second 3 receive from 2nd ongoing`() = runTest {
         var collected1 = -1
         var collected2 = -1
