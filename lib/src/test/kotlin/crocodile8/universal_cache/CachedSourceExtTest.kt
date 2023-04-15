@@ -32,7 +32,7 @@ internal class CachedSourceExtTest {
 
         Assert.assertEquals(1, collected)
         // 1 from a cache warm-up
-        Assert.assertEquals(1, invocations.get())
+        invocations assert 1
         source.assertNoOngoings()
     }
 
@@ -48,7 +48,7 @@ internal class CachedSourceExtTest {
 
         Assert.assertEquals(2, collected)
         // 1 from a cache warm-up + 1 new request after predicate returned false
-        Assert.assertEquals(2, invocations.get())
+        invocations assert 2
         source.assertNoOngoings()
     }
 
@@ -73,8 +73,8 @@ internal class CachedSourceExtTest {
         a.await()
         println("collected: $collected")
 
-        collected.assertContainsInAnyOrder(1, 2, 5, 6)
-        Assert.assertEquals(6, invocations.get())
+        collected assertContainsAnyOrder listOf(1, 2, 5, 6)
+        invocations assert 6
         source.assertNoOngoings()
     }
 
@@ -106,8 +106,8 @@ internal class CachedSourceExtTest {
         a.await()
         println("collected: $collected")
 
-        collected.assertContainsInAnyOrder(1, 5, 6)
-        Assert.assertEquals(6, invocations.get())
+        collected assertContainsAnyOrder listOf(1, 5, 6)
+        invocations assert 6
         source.assertNoOngoings()
     }
 

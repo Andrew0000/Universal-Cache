@@ -25,9 +25,23 @@ suspend fun <P: Any, T: Any> Requester<P, T>.assertNoOngoings() {
     Assert.assertEquals(0, getOngoingSize())
 }
 
+infix fun <T> List<T>.assertContainsAnyOrder(expectedList: List<T>) {
+    Assert.assertEquals(expectedList.size, this.size)
+    Assert.assertTrue(expectedList.containsAll(this))
+    Assert.assertTrue(this.containsAll(expectedList))
+}
+
 fun <T> List<T>.assertContainsInAnyOrder(vararg args: T) {
     val expectedList = args.asList()
     Assert.assertEquals(expectedList.size, this.size)
     Assert.assertTrue(expectedList.containsAll(this))
     Assert.assertTrue(this.containsAll(expectedList))
+}
+
+infix fun AtomicInteger.assert(expected: Int) {
+    this.get().assert(expected)
+}
+
+fun Int.assert(expected: Int) {
+    Assert.assertEquals(expected, this)
 }
