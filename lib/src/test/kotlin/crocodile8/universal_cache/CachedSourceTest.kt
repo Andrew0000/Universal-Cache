@@ -1,6 +1,6 @@
 package crocodile8.universal_cache
 
-import crocodile8.universal_cache.time.TimeProvider
+import crocodile8.universal_cache.TestUtils.zeroTimeProvider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -25,16 +25,13 @@ internal class CachedSourceTest {
         var collected = -1
         var caught = false
         val source = CachedSource<Unit, Int>(source = { 1 })
-        source.get(Unit, fromCache = FromCache.ONLY)
-            .catch {
-                caught = true
-            }
-            .collect {
-                collected = it
-            }
 
-        Assert.assertTrue(caught)
-        Assert.assertEquals(-1, collected)
+        source.get(Unit, fromCache = FromCache.ONLY)
+            .catch { caught = true }
+            .collect { collected = it }
+
+        caught assert true
+        collected assert -1
         source.assertNoOngoings()
     }
 
@@ -46,20 +43,15 @@ internal class CachedSourceTest {
             source = { 2 },
             timeProvider = zeroTimeProvider(),
         )
-        source.get(Unit, fromCache = FromCache.NEVER)
-            .collect {
-                // Cache warm-up
-            }
-        source.getRaw(Unit, fromCache = FromCache.ONLY)
-            .catch {
-                caught = true
-            }
-            .collect {
-                collected = it
-            }
 
-        Assert.assertFalse(caught)
-        Assert.assertEquals(CachedSourceResult(2, fromCache = true, originTimeStamp = 0), collected)
+        source.get(Unit, fromCache = FromCache.NEVER)
+            .collect { /* Cache warm-up */ }
+        source.getRaw(Unit, fromCache = FromCache.ONLY)
+            .catch { caught = true }
+            .collect { collected = it }
+
+        caught assert false
+        collected assert CachedSourceResult(2, fromCache = true, originTimeStamp = 0)
         source.assertNoOngoings()
     }
 
@@ -68,20 +60,15 @@ internal class CachedSourceTest {
         var collected = -1
         var caught = false
         val source = CachedSource<Unit, Int>(source = { 2 })
-        source.get(Unit, fromCache = FromCache.NEVER)
-            .collect {
-                // Cache warm-up
-            }
-        source.get(Unit, fromCache = FromCache.ONLY, maxAge = 0)
-            .catch {
-                caught = true
-            }
-            .collect {
-                collected = it
-            }
 
-        Assert.assertTrue(caught)
-        Assert.assertEquals(-1, collected)
+        source.get(Unit, fromCache = FromCache.NEVER)
+            .collect { /* Cache warm-up */ }
+        source.get(Unit, fromCache = FromCache.ONLY, maxAge = 0)
+            .catch { caught = true }
+            .collect { collected = it }
+
+        caught assert true
+        collected assert -1
         source.assertNoOngoings()
     }
 
@@ -344,9 +331,9 @@ internal class CachedSourceTest {
             .collect {
                 collected3 = it
             }
-        Assert.assertEquals(CachedSourceResult(1, fromCache = false, originTimeStamp = 0L), collected1)
-        Assert.assertEquals(CachedSourceResult(1, fromCache = false, originTimeStamp = 0L), collected2)
-        Assert.assertEquals(CachedSourceResult(1, fromCache = true, originTimeStamp = 0L), collected3)
+        collected1 assert CachedSourceResult(1, fromCache = false, originTimeStamp = 0L)
+        collected2 assert CachedSourceResult(1, fromCache = false, originTimeStamp = 0L)
+        collected3 assert CachedSourceResult(1, fromCache = true, originTimeStamp = 0L)
         source.assertNoOngoings()
     }
 
@@ -590,13 +577,9 @@ internal class CachedSourceTest {
             .collect {
                 collected2 = it
             }
-        Assert.assertEquals(CachedSourceResult(1, fromCache = true, 0L), collected1)
-        Assert.assertEquals(CachedSourceResult(2, fromCache = false, 0L), collected2)
+        collected1 assert CachedSourceResult(1, fromCache = true, 0L)
+        collected2 assert CachedSourceResult(2, fromCache = false, 0L)
         source.assertNoOngoings()
-    }
-
-    private fun zeroTimeProvider() = object : TimeProvider {
-        override fun get(): Long = 0L
     }
 
 }

@@ -1,6 +1,7 @@
 package crocodile8.universal_cache
 
 import crocodile8.universal_cache.request.Requester
+import crocodile8.universal_cache.time.TimeProvider
 import org.junit.Assert
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -15,13 +16,17 @@ object TestUtils {
         })
         return source to invocationCnt
     }
+
+    fun zeroTimeProvider() = object : TimeProvider {
+        override fun get(): Long = 0L
+    }
 }
 
-suspend fun <P: Any, T: Any> CachedSource<P, T>.assertNoOngoings() {
+suspend fun <P : Any, T : Any> CachedSource<P, T>.assertNoOngoings() {
     Assert.assertEquals(0, getOngoingSize())
 }
 
-suspend fun <P: Any, T: Any> Requester<P, T>.assertNoOngoings() {
+suspend fun <P : Any, T : Any> Requester<P, T>.assertNoOngoings() {
     Assert.assertEquals(0, getOngoingSize())
 }
 
@@ -44,4 +49,12 @@ infix fun AtomicInteger.assert(expected: Int) {
 
 infix fun Int?.assert(expected: Int) {
     Assert.assertEquals(expected, this)
+}
+
+infix fun Boolean?.assert(expected: Boolean) {
+    Assert.assertEquals(expected, this)
+}
+
+infix fun <T : Any> CachedSourceResult<T>?.assert(another: CachedSourceResult<T>) {
+    Assert.assertEquals(another, this)
 }
