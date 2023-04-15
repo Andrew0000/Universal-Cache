@@ -106,7 +106,7 @@ internal class CachedSourceTest {
         var collected3 = -1
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(source = {
-            delay(20) // Delay to allow several requests attach to the same ongoing
+            delay(50) // Delay to allow several requests attach to the same ongoing
             sourceInvocationCnt.incrementAndGet()
         })
 
@@ -144,7 +144,7 @@ internal class CachedSourceTest {
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(
             source = {
-                delay(20) // Delay to allow several requests attach to the same ongoing
+                delay(50) // Delay to allow several requests attach to the same ongoing
                 sourceInvocationCnt.incrementAndGet()
             },
             dispatcher = getTestDispatcher(),
@@ -188,7 +188,7 @@ internal class CachedSourceTest {
         var collected6 = -1
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(source = {
-            delay(20) // Delay to allow several requests attach to the same ongoing
+            delay(50) // Delay to allow several requests attach to the same ongoing
             sourceInvocationCnt.incrementAndGet()
         })
 
@@ -259,13 +259,17 @@ internal class CachedSourceTest {
         var caught = false
         val source = CachedSource<Unit, Int>(source = { throw RuntimeException() })
 
-        source.get(Unit, fromCache = FromCache.IF_FAILED)
-            .catch { caught = true }
-            .collect { collected = it }
+        action {
+            source.get(Unit, fromCache = FromCache.IF_FAILED)
+                .catch { caught = true }
+                .collect { collected = it }
+        }
 
-        caught assert true
-        collected assert -1
-        source.assertNoOngoings()
+        result {
+            caught assert true
+            collected assert -1
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -280,14 +284,18 @@ internal class CachedSourceTest {
             }
         })
 
-        source.get(Unit, fromCache = FromCache.IF_FAILED)
-            .collect { /* It's warm-up call */ }
-        source.getRaw(Unit, fromCache = FromCache.IF_FAILED)
-            .collect { collected = it }
+        action {
+            source.get(Unit, fromCache = FromCache.IF_FAILED)
+                .collect { /* It's warm-up call */ }
+            source.getRaw(Unit, fromCache = FromCache.IF_FAILED)
+                .collect { collected = it }
+        }
 
-        collected?.value assert 1
-        collected?.fromCache assert true
-        source.assertNoOngoings()
+        result {
+            collected?.value assert 1
+            collected?.fromCache assert true
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -296,13 +304,17 @@ internal class CachedSourceTest {
         var caught = false
         val source = CachedSource<Unit, Int>(source = { throw RuntimeException() })
 
-        source.get(Unit, fromCache = FromCache.IF_HAVE)
-            .catch { caught = true }
-            .collect {  collected = it }
+        action {
+            source.get(Unit, fromCache = FromCache.IF_HAVE)
+                .catch { caught = true }
+                .collect { collected = it }
+        }
 
-        caught assert true
-        collected assert -1
-        source.assertNoOngoings()
+        result {
+            caught assert true
+            collected assert -1
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -316,17 +328,19 @@ internal class CachedSourceTest {
                 throw RuntimeException()
             }
         })
-        source.get(Unit, fromCache = FromCache.IF_HAVE)
-            .collect {
-                // It's warm-up call
-            }
-        source.getRaw(Unit, fromCache = FromCache.IF_HAVE)
-            .collect {
-                collected = it
-            }
-        Assert.assertEquals(1, collected!!.value)
-        Assert.assertTrue(collected!!.fromCache)
-        source.assertNoOngoings()
+
+        action {
+            source.get(Unit, fromCache = FromCache.IF_HAVE)
+                .collect { /* It's warm-up call */ }
+            source.getRaw(Unit, fromCache = FromCache.IF_HAVE)
+                .collect { collected = it }
+        }
+
+        result {
+            collected?.value assert 1
+            collected?.fromCache assert true
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -341,16 +355,18 @@ internal class CachedSourceTest {
                 throw RuntimeException()
             }
         })
-        val sourceFlow1 = source.get(Unit, fromCache = FromCache.IF_HAVE, shareOngoingRequest = false)
-        val sourceFlow2 = source.get(Unit, fromCache = FromCache.IF_HAVE, shareOngoingRequest = false)
-        sourceFlow1.collect {
-            // Cache warm-up
+
+        action {
+            val sourceFlow1 = source.get(Unit, fromCache = FromCache.IF_HAVE, shareOngoingRequest = false)
+            val sourceFlow2 = source.get(Unit, fromCache = FromCache.IF_HAVE, shareOngoingRequest = false)
+            sourceFlow1.collect { /* Cache warm-up */ }
+            sourceFlow2.collect { collected = it }
         }
-        sourceFlow2.collect {
-            collected = it
+
+        result {
+            collected assert 1
+            source.assertNoOngoings()
         }
-        Assert.assertEquals(1, collected)
-        source.assertNoOngoings()
     }
 
     @Test
@@ -359,36 +375,39 @@ internal class CachedSourceTest {
         var collected2: CachedSourceResult<Int>? = null
         var collected3: CachedSourceResult<Int>? = null
         val sourceInvocationCnt = AtomicInteger()
-        val source = CachedSource<Unit, Int>(source = {
-            delay(200)
-            if (sourceInvocationCnt.incrementAndGet() == 1) {
-                1
-            } else {
-                throw RuntimeException()
-            }
-        }, timeProvider = zeroTimeProvider())
-        val a1 = async {
-            source.getRaw(Unit, fromCache = FromCache.IF_HAVE)
-                .collect {
-                    collected1 = it
+        val source = CachedSource<Unit, Int>(
+            source = {
+                delay(50) // Delay to allow several requests attach to the same ongoing
+                if (sourceInvocationCnt.incrementAndGet() == 1) {
+                    1
+                } else {
+                    throw RuntimeException()
                 }
-        }
-        val a2 = async {
-            source.getRaw(Unit, fromCache = FromCache.IF_HAVE)
-                .collect {
-                    collected2 = it
-                }
-        }
-        a1.await()
-        a2.await()
-        source.getRaw(Unit, fromCache = FromCache.IF_HAVE)
-            .collect {
-                collected3 = it
+            },
+            timeProvider = zeroTimeProvider(),
+        )
+
+        action {
+            val a1 = async {
+                source.getRaw(Unit, fromCache = FromCache.IF_HAVE)
+                    .collect { collected1 = it }
             }
-        collected1 assert CachedSourceResult(1, fromCache = false, originTimeStamp = 0L)
-        collected2 assert CachedSourceResult(1, fromCache = false, originTimeStamp = 0L)
-        collected3 assert CachedSourceResult(1, fromCache = true, originTimeStamp = 0L)
-        source.assertNoOngoings()
+            val a2 = async {
+                source.getRaw(Unit, fromCache = FromCache.IF_HAVE)
+                    .collect { collected2 = it }
+            }
+            a1.await()
+            a2.await()
+            source.getRaw(Unit, fromCache = FromCache.IF_HAVE)
+                .collect { collected3 = it }
+        }
+
+        result {
+            collected1 assert CachedSourceResult(1, fromCache = false, originTimeStamp = 0L)
+            collected2 assert CachedSourceResult(1, fromCache = false, originTimeStamp = 0L)
+            collected3 assert CachedSourceResult(1, fromCache = true, originTimeStamp = 0L)
+            source.assertNoOngoings()
+        }
     }
 
     @Test
