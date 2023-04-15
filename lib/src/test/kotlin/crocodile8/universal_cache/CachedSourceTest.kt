@@ -414,25 +414,27 @@ internal class CachedSourceTest {
     fun `FromCache CACHE_THEN_LOAD + 1 success + 1 success = Get cached + load`() = runTest {
         val collected = mutableListOf<CachedSourceResult<Int>>()
         val sourceInvocationCnt = AtomicInteger()
-        val source = CachedSource<Unit, Int>(source = {
-            sourceInvocationCnt.incrementAndGet()
-        }, timeProvider = zeroTimeProvider())
-        source.get(Unit, fromCache = FromCache.NEVER)
-            .collect {
-                // Warm-up cache
-            }
-        source.getRaw(Unit, fromCache = FromCache.CACHED_THEN_LOAD)
-            .collect {
-                collected += it
-            }
-        Assert.assertEquals(
-            listOf(
+        val source = CachedSource<Unit, Int>(
+            source = {
+                sourceInvocationCnt.incrementAndGet()
+            },
+            timeProvider = zeroTimeProvider(),
+        )
+
+        action {
+            source.get(Unit, fromCache = FromCache.NEVER)
+                .collect { /* Warm-up cache */ }
+            source.getRaw(Unit, fromCache = FromCache.CACHED_THEN_LOAD)
+                .collect { collected += it }
+        }
+
+        result {
+            collected assert listOf(
                 CachedSourceResult(1, fromCache = true, originTimeStamp = 0L),
                 CachedSourceResult(2, fromCache = false, originTimeStamp = 0L)
-            ),
-            collected
-        )
-        source.assertNoOngoings()
+            )
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -447,18 +449,20 @@ internal class CachedSourceTest {
                 throw RuntimeException()
             }
         })
-        source.get(Unit, fromCache = FromCache.NEVER)
-            .collect {
-                // Warm-up cache
-            }
-        source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD)
-            .catch { caught = true }
-            .collect {
-                collected += it
-            }
-        Assert.assertTrue(caught)
-        Assert.assertEquals(listOf(1), collected)
-        source.assertNoOngoings()
+
+        action {
+            source.get(Unit, fromCache = FromCache.NEVER)
+                .collect { /* Warm-up cache */ }
+            source.get(Unit, fromCache = FromCache.CACHED_THEN_LOAD)
+                .catch { caught = true }
+                .collect { collected += it }
+        }
+
+        result {
+            caught assert true
+            collected assert listOf(1)
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -468,42 +472,41 @@ internal class CachedSourceTest {
         var caught1 = false
         var caught2 = false
         val sourceInvocationCnt = AtomicInteger()
-        val source = CachedSource<Unit, Int>(source = {
-            val cnt = sourceInvocationCnt.incrementAndGet()
-            if (cnt % 2 == 1) {
-                cnt
-            } else {
-                throw RuntimeException()
-            }
-        }, timeProvider = zeroTimeProvider())
-        source.get(Unit, fromCache = FromCache.NEVER)
-            .collect {
-                // Warm-up cache
-            }
-        source.getRaw(Unit, fromCache = FromCache.CACHED_THEN_LOAD)
-            .catch { caught1 = true }
-            .collect {
-                collected1+= it
-            }
-        source.getRaw(Unit, fromCache = FromCache.CACHED_THEN_LOAD)
-            .catch { caught2 = true }
-            .collect {
-                collected2+= it
-            }
-        Assert.assertTrue(caught1)
-        Assert.assertFalse(caught2)
-        Assert.assertEquals(
-            listOf(CachedSourceResult(1, fromCache = true, originTimeStamp = 0L)),
-            collected1
+        val source = CachedSource<Unit, Int>(
+            source = {
+                val cnt = sourceInvocationCnt.incrementAndGet()
+                if (cnt % 2 == 1) {
+                    cnt
+                } else {
+                    throw RuntimeException()
+                }
+            },
+            timeProvider = zeroTimeProvider(),
         )
-        Assert.assertEquals(
-            listOf(
+
+        action {
+            source.get(Unit, fromCache = FromCache.NEVER)
+                .collect { /* Warm-up cache */ }
+            source.getRaw(Unit, fromCache = FromCache.CACHED_THEN_LOAD)
+                .catch { caught1 = true }
+                .collect { collected1 += it }
+            source.getRaw(Unit, fromCache = FromCache.CACHED_THEN_LOAD)
+                .catch { caught2 = true }
+                .collect { collected2 += it }
+        }
+
+        result {
+            caught1 assert true
+            caught2 assert false
+            collected1 assert listOf(
+                CachedSourceResult(1, fromCache = true, originTimeStamp = 0L)
+            )
+            collected2 assert listOf(
                 CachedSourceResult(1, fromCache = true, originTimeStamp = 0L),
                 CachedSourceResult(3, fromCache = false, originTimeStamp = 0L)
-            ),
-            collected2
-        )
-        source.assertNoOngoings()
+            )
+            source.assertNoOngoings()
+        }
     }
 
     @Test

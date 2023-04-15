@@ -46,6 +46,10 @@ suspend fun <P : Any, T : Any> Requester<P, T>.assertNoOngoings() {
     Assert.assertEquals(0, getOngoingSize())
 }
 
+infix fun <T> List<T>.assert(expectedList: List<T>) {
+    Assert.assertEquals(expectedList, this)
+}
+
 infix fun <T> List<T>.assertContainsAnyOrder(expectedList: List<T>) {
     Assert.assertEquals(expectedList.size, this.size)
     Assert.assertTrue(expectedList.containsAll(this))
