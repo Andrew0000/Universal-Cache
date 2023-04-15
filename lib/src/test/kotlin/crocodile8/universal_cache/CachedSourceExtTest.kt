@@ -78,7 +78,7 @@ internal class CachedSourceExtTest {
                 }
                 .collect { collected += it }
         }
-        mutexUntilFirstEmit.withLock {  }
+        mutexUntilFirstEmit.await()
         source.get("1", FromCache.NEVER, shareOngoingRequest = false).collect {}
         source.get("2", FromCache.NEVER, shareOngoingRequest = false).collect {}
         source.get("3", FromCache.NEVER, shareOngoingRequest = false).collect {}
@@ -120,7 +120,7 @@ internal class CachedSourceExtTest {
                 }
                 .collect { collected += it }
         }
-        mutexUntilFirstEmit.withLock {  }
+        mutexUntilFirstEmit.await()
         source.get("1", FromCache.NEVER, shareOngoingRequest = false).catch {}.collect {}
         source.get("2", FromCache.NEVER, shareOngoingRequest = false).collect {}
         source.get("3", FromCache.NEVER, shareOngoingRequest = false).collect {}
@@ -137,4 +137,10 @@ internal class CachedSourceExtTest {
         source.assertNoOngoings()
     }
 
+    /**
+     * Waits for [Mutex.unlock] if this Mutex was constructed with locked = true
+     */
+    private suspend fun Mutex.await() {
+        withLock {  }
+    }
 }
