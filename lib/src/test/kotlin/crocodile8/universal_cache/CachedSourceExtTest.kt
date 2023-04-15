@@ -31,7 +31,6 @@ internal class CachedSourceExtTest {
             .collect { collected = it }
 
         Assert.assertEquals(1, collected)
-        // 1 from a cache warm-up
         invocations assert 1
         source.assertNoOngoings()
     }
@@ -47,7 +46,6 @@ internal class CachedSourceExtTest {
             .collect { collected = it }
 
         Assert.assertEquals(2, collected)
-        // 1 from a cache warm-up + 1 new request after predicate returned false
         invocations assert 2
         source.assertNoOngoings()
     }
