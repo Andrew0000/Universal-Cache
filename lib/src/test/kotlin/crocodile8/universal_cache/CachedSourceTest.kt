@@ -177,25 +177,27 @@ internal class CachedSourceTest {
     fun `FromCache IF_FAILED + 1 success`() = runTest {
         var collected: CachedSourceResult<Int>? = null
         val source = CachedSource<Unit, Int>(source = { 1 })
+
         source.getRaw(Unit, fromCache = FromCache.IF_FAILED)
-            .collect {
-                collected = it
-            }
-        Assert.assertEquals(1, collected!!.value)
-        Assert.assertFalse(collected!!.fromCache)
+            .collect { collected = it }
+
+        collected?.value assert 1
+        collected?.fromCache assert false
         source.assertNoOngoings()
     }
 
     @Test
     fun `FromCache IF_FAILED + 1 failure = Catch exception`() = runTest {
         var collected = -1
+        var caught = false
         val source = CachedSource<Unit, Int>(source = { throw RuntimeException() })
+
         source.get(Unit, fromCache = FromCache.IF_FAILED)
-            .catch { collected = 2 }
-            .collect {
-                collected = it
-            }
-        Assert.assertEquals(2, collected)
+            .catch { caught = true }
+            .collect { collected = it }
+
+        caught assert true
+        collected assert -1
         source.assertNoOngoings()
     }
 
@@ -210,29 +212,29 @@ internal class CachedSourceTest {
                 throw RuntimeException()
             }
         })
+
         source.get(Unit, fromCache = FromCache.IF_FAILED)
-            .collect {
-                // It's warm-up call
-            }
+            .collect { /* It's warm-up call */ }
         source.getRaw(Unit, fromCache = FromCache.IF_FAILED)
-            .collect {
-                collected = it
-            }
-        Assert.assertEquals(1, collected!!.value)
-        Assert.assertTrue(collected!!.fromCache)
+            .collect { collected = it }
+
+        collected?.value assert 1
+        collected?.fromCache assert true
         source.assertNoOngoings()
     }
 
     @Test
     fun `FromCache IF_HAVE + 1 failure = Catch exception`() = runTest {
         var collected = -1
+        var caught = false
         val source = CachedSource<Unit, Int>(source = { throw RuntimeException() })
+
         source.get(Unit, fromCache = FromCache.IF_HAVE)
-            .catch { collected = 2 }
-            .collect {
-                collected = it
-            }
-        Assert.assertEquals(2, collected)
+            .catch { caught = true }
+            .collect {  collected = it }
+
+        caught assert true
+        collected assert -1
         source.assertNoOngoings()
     }
 
