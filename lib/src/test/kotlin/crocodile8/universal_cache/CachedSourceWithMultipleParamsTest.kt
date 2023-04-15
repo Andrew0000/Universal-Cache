@@ -2,11 +2,9 @@ package crocodile8.universal_cache
 
 import crocodile8.universal_cache.TestUtils.zeroTimeProvider
 import crocodile8.universal_cache.keep.MemoryCache
-import crocodile8.universal_cache.time.TimeProvider
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.util.concurrent.atomic.AtomicInteger
