@@ -1,5 +1,6 @@
 package crocodile8.universal_cache
 
+import crocodile8.universal_cache.test_utils.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.catch

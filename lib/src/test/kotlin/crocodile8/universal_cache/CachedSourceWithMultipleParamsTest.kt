@@ -1,7 +1,8 @@
 package crocodile8.universal_cache
 
-import crocodile8.universal_cache.TestUtils.zeroTimeProvider
 import crocodile8.universal_cache.keep.MemoryCache
+import crocodile8.universal_cache.test_utils.*
+import crocodile8.universal_cache.test_utils.TestUtils.zeroTimeProvider
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.test.runTest

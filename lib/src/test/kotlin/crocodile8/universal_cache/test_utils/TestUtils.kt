@@ -1,5 +1,7 @@
-package crocodile8.universal_cache
+package crocodile8.universal_cache.test_utils
 
+import crocodile8.universal_cache.CachedSource
+import crocodile8.universal_cache.CachedSourceResult
 import crocodile8.universal_cache.request.Requester
 import crocodile8.universal_cache.time.TimeProvider
 import kotlinx.coroutines.CoroutineDispatcher
