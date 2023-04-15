@@ -1,7 +1,6 @@
 package crocodile8.universal_cache
 
 import crocodile8.universal_cache.TestUtils.zeroTimeProvider
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -519,20 +518,18 @@ internal class CachedSourceTest {
         source.assertNoOngoings()
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun `FromCache NEVER + load + cancel + load = Loading cancelled + load`() = runTest {
         val collected1 = mutableListOf<CachedSourceResult<Int>>()
         val collected2 = mutableListOf<CachedSourceResult<Int>>()
         val sourceInvocationCnt = AtomicInteger()
-        val dispatcher = coroutineContext[CoroutineDispatcher.Key] as CoroutineDispatcher
         val source = CachedSource<Unit, Int>(
             source = {
                 delay(100)
                 sourceInvocationCnt.incrementAndGet()
             },
             timeProvider = zeroTimeProvider(),
-            dispatcher = dispatcher,
+            dispatcher = getTestDispatcher(),
         )
         val a1 = async {
             source.getRaw(Unit, fromCache = FromCache.NEVER)
@@ -553,18 +550,16 @@ internal class CachedSourceTest {
         source.assertNoOngoings()
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun `FromCache NEVER + load + cancel + load another param = No ongoings`() = runTest {
         val sourceInvocationCnt = AtomicInteger()
-        val dispatcher = coroutineContext[CoroutineDispatcher.Key] as CoroutineDispatcher
         val source = CachedSource<String, Int>(
             source = {
                 delay(100)
                 sourceInvocationCnt.incrementAndGet()
             },
             timeProvider = zeroTimeProvider(),
-            dispatcher = dispatcher,
+            dispatcher = getTestDispatcher(),
         )
         val a1 = async {
             source.getRaw("1", fromCache = FromCache.NEVER)
