@@ -1,5 +1,6 @@
 package crocodile8.universal_cache
 
+import crocodile8.universal_cache.TestUtils.zeroTimeProvider
 import crocodile8.universal_cache.keep.MemoryCache
 import crocodile8.universal_cache.time.TimeProvider
 import kotlinx.coroutines.*
@@ -22,12 +23,16 @@ internal class CachedSourceWithMultipleParamsTest {
     fun `FromCache NEVER + 1 request`() = runTest {
         var collected = -1
         val source = CachedSource<String, Int>(source = { 1 })
-        source.get("1", fromCache = FromCache.NEVER)
-            .collect {
-                collected = it
-            }
-        Assert.assertEquals(1, collected)
-        Assert.assertEquals(0, source.getOngoingSize())
+
+        action {
+            source.get("1", fromCache = FromCache.NEVER)
+                .collect { collected = it }
+        }
+
+        result {
+            collected assert 1
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -39,31 +44,31 @@ internal class CachedSourceWithMultipleParamsTest {
             delay(100)
             it.toInt()
         })
-        val a1 = async {
-            source.get("1", fromCache = FromCache.NEVER)
-                .collect {
-                    collected1 = it
-                }
+
+        action {
+            val a1 = async {
+                source.get("1", fromCache = FromCache.NEVER)
+                    .collect { collected1 = it }
+            }
+            val a2 = async {
+                source.get("1", fromCache = FromCache.NEVER)
+                    .collect { collected2 = it }
+            }
+            val a3 = async {
+                source.get("2", fromCache = FromCache.NEVER)
+                    .collect { collected3 = it }
+            }
+            a1.await()
+            a2.await()
+            a3.await()
         }
-        val a2 = async {
-            source.get("1", fromCache = FromCache.NEVER)
-                .collect {
-                    collected2 = it
-                }
+
+        result {
+            collected1 assert 1
+            collected2 assert 1
+            collected3 assert 2
+            source.assertNoOngoings()
         }
-        val a3 = async {
-            source.get("2", fromCache = FromCache.NEVER)
-                .collect {
-                    collected3 = it
-                }
-        }
-        a1.await()
-        a2.await()
-        a3.await()
-        Assert.assertEquals(1, collected1)
-        Assert.assertEquals(1, collected2)
-        Assert.assertEquals(2, collected3)
-        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
@@ -79,81 +84,85 @@ internal class CachedSourceWithMultipleParamsTest {
             delay(200)
             sourceInvocationCnt[it.toInt() - 1].incrementAndGet()
         })
-        val a1 = async {
-            source.get("1", fromCache = FromCache.NEVER)
-                .collect {
-                    collected1 = it
-                }
-        }
-        val a2 = async {
-            source.get("1", fromCache = FromCache.NEVER)
-                .collect {
-                    collected2 = it
-                }
-        }
-        val a3 = async {
-            source.get("2", fromCache = FromCache.NEVER)
-                .collect {
-                    collected3 = it
-                }
-        }
-        a1.await()
-        a2.await()
-        a3.await()
-        Assert.assertEquals(1, collected1)
-        Assert.assertEquals(1, collected2)
-        Assert.assertEquals(2, collected3)
 
-        val a4 = async {
-            source.get("3", fromCache = FromCache.NEVER)
-                .collect {
-                    collected4 = it
-                }
+        action {
+            val a1 = async {
+                source.get("1", fromCache = FromCache.NEVER)
+                    .collect { collected1 = it }
+            }
+            val a2 = async {
+                source.get("1", fromCache = FromCache.NEVER)
+                    .collect { collected2 = it }
+            }
+            val a3 = async {
+                source.get("2", fromCache = FromCache.NEVER)
+                    .collect { collected3 = it }
+            }
+            a1.await()
+            a2.await()
+            a3.await()
+
+            val a4 = async {
+                source.get("3", fromCache = FromCache.NEVER)
+                    .collect { collected4 = it }
+            }
+            val a5 = async {
+                source.get("3", fromCache = FromCache.NEVER)
+                    .collect { collected5 = it }
+            }
+            val a6 = async {
+                source.get("4", fromCache = FromCache.NEVER)
+                    .collect {  collected6 = it }
+            }
+            a4.await()
+            a5.await()
+            a6.await()
         }
-        val a5 = async {
-            source.get("3", fromCache = FromCache.NEVER)
-                .collect {
-                    collected5 = it
-                }
+
+        result {
+            collected1 assert 1
+            collected2 assert 1
+            collected3 assert 2
+
+            collected4 assert 3
+            collected5 assert 3
+            collected6 assert 4
+
+            source.assertNoOngoings()
         }
-        val a6 = async {
-            source.get("4", fromCache = FromCache.NEVER)
-                .collect {
-                    collected6 = it
-                }
-        }
-        a4.await()
-        a5.await()
-        a6.await()
-        Assert.assertEquals(3, collected4)
-        Assert.assertEquals(3, collected5)
-        Assert.assertEquals(4, collected6)
-        Assert.assertEquals(0, source.getOngoingSize())
     }
 
     @Test
     fun `FromCache IF_FAILED + 1 success`() = runTest {
         var collected = -1
         val source = CachedSource<String, Int>(source = { 1 })
-        source.get("1", fromCache = FromCache.IF_FAILED)
-            .collect {
-                collected = it
-            }
-        Assert.assertEquals(1, collected)
-        Assert.assertEquals(0, source.getOngoingSize())
+
+        action {
+            source.get("1", fromCache = FromCache.IF_FAILED)
+                .collect { collected = it }
+        }
+
+        result {
+            collected assert 1
+            source.assertNoOngoings()
+        }
     }
 
     @Test
     fun `FromCache IF_FAILED + 1 failure = Catch exception`() = runTest {
         var collected = -1
         val source = CachedSource<String, Int>(source = { throw RuntimeException() })
-        source.get("1", fromCache = FromCache.IF_FAILED)
-            .catch { collected = 2 }
-            .collect {
-                collected = it
-            }
-        Assert.assertEquals(2, collected)
-        Assert.assertEquals(0, source.getOngoingSize())
+
+        action {
+            source.get("1", fromCache = FromCache.IF_FAILED)
+                .catch { collected = 2 }
+                .collect { collected = it }
+        }
+
+        result {
+            collected assert 2
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -161,42 +170,49 @@ internal class CachedSourceWithMultipleParamsTest {
         var collected = -1
         var caught = false
         val sourceInvocationCnt = AtomicInteger()
-        val source = CachedSource<String, Int>(source = {
-            if (sourceInvocationCnt.incrementAndGet() == 1) {
-                1
-            } else {
-                throw RuntimeException()
-            }
-        }, cache = MemoryCache(2))
-        source.get("1", fromCache = FromCache.IF_FAILED)
-            .collect {
-                // It's warm-up call
-            }
-        source.get("1", fromCache = FromCache.IF_FAILED)
-            .collect {
-                collected = it
-            }
-        source.get("2", fromCache = FromCache.IF_FAILED)
-            .catch { caught = true }
-            .collect {
-                collected = it
-            }
-        Assert.assertEquals(1, collected)
-        Assert.assertTrue(caught)
-        Assert.assertEquals(0, source.getOngoingSize())
+        val source = CachedSource<String, Int>(
+            source = {
+                if (sourceInvocationCnt.incrementAndGet() == 1) {
+                    1
+                } else {
+                    throw RuntimeException()
+                }
+            },
+            cache = MemoryCache(2),
+        )
+
+        action {
+            source.get("1", fromCache = FromCache.IF_FAILED)
+                .collect { /* It's warm-up call */ }
+            source.get("1", fromCache = FromCache.IF_FAILED)
+                .collect { collected = it }
+            source.get("2", fromCache = FromCache.IF_FAILED)
+                .catch { caught = true }
+                .collect { collected = it }
+        }
+
+        result {
+            collected assert 1
+            caught assert true
+            source.assertNoOngoings()
+        }
     }
 
     @Test
     fun `FromCache IF_HAVE + 1 failure = Catch exception`() = runTest {
         var collected = -1
         val source = CachedSource<String, Int>(source = { throw RuntimeException() })
-        source.get("1", fromCache = FromCache.IF_HAVE)
-            .catch { collected = 2 }
-            .collect {
-                collected = it
-            }
-        Assert.assertEquals(2, collected)
-        Assert.assertEquals(0, source.getOngoingSize())
+
+        action {
+            source.get("1", fromCache = FromCache.IF_HAVE)
+                .catch { collected = 2 }
+                .collect { collected = it }
+        }
+
+        result {
+            collected assert 2
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -204,29 +220,32 @@ internal class CachedSourceWithMultipleParamsTest {
         var collected = -1
         var caught = false
         val sourceInvocationCnt = AtomicInteger()
-        val source = CachedSource<String, Int>(source = {
-            if (sourceInvocationCnt.incrementAndGet() == 1) {
-                1
-            } else {
-                throw RuntimeException()
-            }
-        }, cache = MemoryCache(2))
-        source.get("1", fromCache = FromCache.IF_HAVE)
-            .collect {
-                // It's warm-up call
-            }
-        source.get("1", fromCache = FromCache.IF_HAVE)
-            .collect {
-                collected = it
-            }
-        source.get("2", fromCache = FromCache.IF_HAVE)
-            .catch { caught = true }
-            .collect {
-                collected = it
-            }
-        Assert.assertEquals(1, collected)
-        Assert.assertTrue(caught)
-        Assert.assertEquals(0, source.getOngoingSize())
+        val source = CachedSource<String, Int>(
+            source = {
+                if (sourceInvocationCnt.incrementAndGet() == 1) {
+                    1
+                } else {
+                    throw RuntimeException()
+                }
+            },
+            cache = MemoryCache(2),
+        )
+
+        action {
+            source.get("1", fromCache = FromCache.IF_HAVE)
+                .collect { /* It's warm-up call */ }
+            source.get("1", fromCache = FromCache.IF_HAVE)
+                .collect { collected = it }
+            source.get("2", fromCache = FromCache.IF_HAVE)
+                .catch { caught = true }
+                .collect { collected = it }
+        }
+
+        result {
+            collected assert 1
+            caught assert true
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -236,32 +255,35 @@ internal class CachedSourceWithMultipleParamsTest {
         var collected3 = -1
         var caught2 = false
         val sourceInvocationCnt = AtomicInteger()
-        val source = CachedSource<String, Int>(source = {
-            delay(200)
-            if (sourceInvocationCnt.incrementAndGet() == 1) {
-                1
-            } else {
-                throw RuntimeException()
-            }
-        }, cache = MemoryCache(2))
-        source.get("1", fromCache = FromCache.IF_HAVE)
-            .collect {
-                collected1 = it
-            }
-        source.get("2", fromCache = FromCache.IF_HAVE)
-            .catch { caught2 = true }
-            .collect {
-                collected2 = it
-            }
-        source.get("1", fromCache = FromCache.IF_HAVE)
-            .collect {
-                collected3 = it
-            }
-        Assert.assertEquals(1, collected1)
-        Assert.assertEquals(-1, collected2)
-        Assert.assertTrue(caught2)
-        Assert.assertEquals(1, collected3)
-        Assert.assertEquals(0, source.getOngoingSize())
+        val source = CachedSource<String, Int>(
+            source = {
+                delay(200)
+                if (sourceInvocationCnt.incrementAndGet() == 1) {
+                    1
+                } else {
+                    throw RuntimeException()
+                }
+            },
+            cache = MemoryCache(2),
+        )
+
+        action {
+            source.get("1", fromCache = FromCache.IF_HAVE)
+                .collect { collected1 = it }
+            source.get("2", fromCache = FromCache.IF_HAVE)
+                .catch { caught2 = true }
+                .collect { collected2 = it }
+            source.get("1", fromCache = FromCache.IF_HAVE)
+                .collect { collected3 = it }
+        }
+
+        result {
+            collected1 assert 1
+            collected2 assert -1
+            collected3 assert 1
+            caught2 assert true
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -273,29 +295,25 @@ internal class CachedSourceWithMultipleParamsTest {
                 it.toInt()
             },
             cache = MemoryCache(2),
-            timeProvider = object : TimeProvider {
-                override fun get(): Long = 0L
-            }
+            timeProvider = zeroTimeProvider(),
         )
-        source.get("1", fromCache = FromCache.IF_HAVE)
-            .collect {
-                // Cache warm-up
-            }
-        source.get("2", fromCache = FromCache.IF_HAVE)
-            .collect {
-                // Cache warm-up
-            }
-        source.getRaw("1", fromCache = FromCache.IF_HAVE, maxAge = 100)
-            .collect {
-                collected1 = it
-            }
-        source.getRaw("2", fromCache = FromCache.IF_HAVE, maxAge = -1)
-            .collect {
-                collected2 = it
-            }
-        Assert.assertEquals(CachedSourceResult(1, fromCache = true, originTimeStamp = 0L), collected1)
-        Assert.assertEquals(CachedSourceResult(2, fromCache = false, originTimeStamp = 0L), collected2)
-        Assert.assertEquals(0, source.getOngoingSize())
+
+        action {
+            source.get("1", fromCache = FromCache.IF_HAVE)
+                .collect { /* Cache warm-up */ }
+            source.get("2", fromCache = FromCache.IF_HAVE)
+                .collect { /* Cache warm-up */ }
+            source.getRaw("1", fromCache = FromCache.IF_HAVE, maxAge = 100)
+                .collect { collected1 = it }
+            source.getRaw("2", fromCache = FromCache.IF_HAVE, maxAge = -1)
+                .collect { collected2 = it }
+        }
+
+        result {
+            collected1 assert CachedSourceResult(1, fromCache = true, originTimeStamp = 0L)
+            collected2 assert CachedSourceResult(2, fromCache = false, originTimeStamp = 0L)
+            source.assertNoOngoings()
+        }
     }
 
 }

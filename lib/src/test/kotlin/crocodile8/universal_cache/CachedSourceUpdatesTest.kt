@@ -5,7 +5,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.util.concurrent.atomic.AtomicInteger
@@ -21,47 +20,47 @@ class CachedSourceUpdatesTest {
     @Test
     fun `FromCache NEVER = Updates are collected`() = runTest {
         val collectedUpdates = mutableListOf<Int>()
-        val sourceInvocationCnt = AtomicInteger()
-        val source = CachedSource<String, Int>(source = {
-            sourceInvocationCnt.incrementAndGet()
-        })
-        val a = async {
-            source.updates.take(3).collect { (_, result) ->
-                collectedUpdates += result.value
+        val (source, _) = TestUtils.createStringIntSource()
+
+        action {
+            val a = async {
+                source.updates.take(3).collect { (_, result) ->
+                    collectedUpdates += result.value
+                }
             }
+            source.get("", FromCache.NEVER).collect {}
+            source.get("", FromCache.NEVER).collect {}
+            source.get("", FromCache.NEVER).collect {}
+            a.await()
         }
-        source.get("", FromCache.NEVER).collect {}
-        source.get("", FromCache.NEVER).collect {}
-        source.get("", FromCache.NEVER).collect {}
-        a.await()
-        Assert.assertArrayEquals(
-            listOf(1, 2, 3).toIntArray(),
-            collectedUpdates.toIntArray()
-        )
-        Assert.assertEquals(0, source.getOngoingSize())
+
+        result {
+            collectedUpdates assertAnyOrder listOf(1, 2, 3)
+            source.assertNoOngoings()
+        }
     }
 
     @Test
     fun `FromCache IF_HAVE = Updates are collected`() = runTest {
         val collectedUpdates = mutableListOf<Int>()
-        val sourceInvocationCnt = AtomicInteger()
-        val source = CachedSource<String, Int>(source = {
-            sourceInvocationCnt.incrementAndGet()
-        })
-        val a = async {
-            source.updates.take(2).collect { (_, result) ->
-                collectedUpdates += result.value
+        val (source, _) = TestUtils.createStringIntSource()
+
+        action {
+            val a = async {
+                source.updates.take(2).collect { (_, result) ->
+                    collectedUpdates += result.value
+                }
             }
+            source.get("1", FromCache.IF_HAVE).collect {}
+            source.get("1", FromCache.IF_HAVE).collect {}
+            source.get("2", FromCache.IF_HAVE).collect {}
+            a.await()
         }
-        source.get("1", FromCache.IF_HAVE).collect {}
-        source.get("1", FromCache.IF_HAVE).collect {}
-        source.get("2", FromCache.IF_HAVE).collect {}
-        a.await()
-        Assert.assertArrayEquals(
-            listOf(1, 2).toIntArray(),
-            collectedUpdates.toIntArray()
-        )
-        Assert.assertEquals(0, source.getOngoingSize())
+
+        result {
+            collectedUpdates assertAnyOrder listOf(1, 2)
+            source.assertNoOngoings()
+        }
     }
 
     @Test
@@ -77,35 +76,35 @@ class CachedSourceUpdatesTest {
                 throw RuntimeException(cnt.toString())
             }
         })
-        val a1 = async {
-            source.updates.take(4).collect { (_, result) ->
-                collectedUpdates += result.value
+
+        action {
+            val a1 = async {
+                source.updates.take(4).collect { (_, result) ->
+                    collectedUpdates += result.value
+                }
             }
-        }
-        val a2 = async {
-            source.errors.take(4).collect { (_, throwable) ->
-                collectedErrors += throwable
+            val a2 = async {
+                source.errors.take(4).collect { (_, throwable) ->
+                    collectedErrors += throwable
+                }
             }
+            source.get("1", FromCache.NEVER).catch {}.collect {}
+            source.get("2", FromCache.NEVER).catch {}.collect {}
+            source.get("3", FromCache.NEVER).catch {}.collect {}
+            source.get("4", FromCache.NEVER).catch {}.collect {}
+            source.get("5", FromCache.NEVER).catch {}.collect {}
+            source.get("6", FromCache.NEVER).catch {}.collect {}
+            source.get("7", FromCache.NEVER).catch {}.collect {}
+            source.get("8", FromCache.NEVER).catch {}.collect {}
+            a1.await()
+            a2.await()
         }
-        source.get("1", FromCache.NEVER).catch {}.collect {}
-        source.get("2", FromCache.NEVER).catch {}.collect {}
-        source.get("3", FromCache.NEVER).catch {}.collect {}
-        source.get("4", FromCache.NEVER).catch {}.collect {}
-        source.get("5", FromCache.NEVER).catch {}.collect {}
-        source.get("6", FromCache.NEVER).catch {}.collect {}
-        source.get("7", FromCache.NEVER).catch {}.collect {}
-        source.get("8", FromCache.NEVER).catch {}.collect {}
-        a1.await()
-        a2.await()
-        Assert.assertArrayEquals(
-            listOf(1, 3, 5, 7).toIntArray(),
-            collectedUpdates.toIntArray()
-        )
-        Assert.assertArrayEquals(
-            listOf("2", "4", "6", "8").toTypedArray(),
-            collectedErrors.map { it.message }.toTypedArray()
-        )
-        Assert.assertEquals(0, source.getOngoingSize())
+
+        result {
+            collectedUpdates assertAnyOrder listOf(1, 3, 5, 7)
+            collectedErrors.map { it.message } assertAnyOrder listOf("2", "4", "6", "8")
+            source.assertNoOngoings()
+        }
     }
 
 }
