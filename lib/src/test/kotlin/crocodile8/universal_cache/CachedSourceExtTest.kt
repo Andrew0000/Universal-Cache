@@ -61,11 +61,7 @@ internal class CachedSourceExtTest {
         val a = async {
             source.observeAndRequest("1")
                 .take(4)
-                .onEach {
-                    if (mutexUntilFirstEmit.isLocked) {
-                        mutexUntilFirstEmit.unlock()
-                    }
-                }
+                .onEach { mutexUntilFirstEmit.unlockOnce() }
                 .collect { collected += it }
         }
         mutexUntilFirstEmit.await()
@@ -98,11 +94,7 @@ internal class CachedSourceExtTest {
         val a = async {
             source.observeAndRequest("1")
                 .take(3)
-                .onEach {
-                    if (mutexUntilFirstEmit.isLocked) {
-                        mutexUntilFirstEmit.unlock()
-                    }
-                }
+                .onEach { mutexUntilFirstEmit.unlockOnce() }
                 .collect { collected += it }
         }
         mutexUntilFirstEmit.await()
@@ -120,9 +112,18 @@ internal class CachedSourceExtTest {
     }
 
     /**
-     * Waits for [Mutex.unlock] if this Mutex was constructed with locked = true
+     * Waits for [Mutex.unlock] if this Mutex was constructed with locked = true.
      */
     private suspend fun Mutex.await() {
         withLock {  }
+    }
+
+    /**
+     * Avoids "Mutex is not locked" error in case of multiple unlocks.
+     */
+    private fun Mutex.unlockOnce() {
+        if (isLocked) {
+            unlock()
+        }
     }
 }
