@@ -10,7 +10,10 @@
 /.idea/**
 .DS_Store
 /build
+**/build
 /captures
 .externalNativeBuild
 .cxx
 local.properties
+pub.properties
+secring.gpg
