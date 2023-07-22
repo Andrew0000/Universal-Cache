@@ -1,6 +1,7 @@
 Manually to Maven Central:
 // https://kotlinlang.org/docs/multiplatform-library.html#publish-your-library-to-maven-central
 - Make sure a) pub.properties and b) secring.gpg are in the root project directory
+- Raise version
 - Run gradle task: ./gradlew publishAllPublicationsToSonatypeRepository
 - Log-in into: https://s01.oss.sonatype.org/#stagingRepositories
 - Close artifact, wait
