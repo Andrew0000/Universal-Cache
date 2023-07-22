@@ -1,4 +1,4 @@
-package com.example.myapplication
+package crocodile8.universal_cache
 
 import org.junit.Test
 

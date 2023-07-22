@@ -1,4 +1,4 @@
-package com.example.myapplication
+package crocodile8.universal_cache_app
 
 import android.annotation.SuppressLint
 import androidx.appcompat.app.AppCompatActivity
