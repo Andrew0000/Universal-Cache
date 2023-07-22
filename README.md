@@ -96,6 +96,14 @@ put(value: T, params: P, additionalKey: Any?, time: Long)
 
 # Setup:  
 
+### Kotlin Multiplatform. Versions after 1.1.*  
+
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.andrew0000/universal-cache)](https://mvnrepository.com/artifact/io.github.andrew0000/universal-cache)  
+
+Add `implementation 'io.github.andrew0000:universal-cache:$latest_version'` to the module-level `build.gradle` 
+
+### Old. Android only. Versions prior to 1.1.*  
+
 [![](https://jitpack.io/v/Andrew0000/Universal-Cache.svg)](https://jitpack.io/#Andrew0000/Universal-Cache)
 
 1. Add `maven { url 'https://jitpack.io' }` to the `allprojects` or `dependencyResolutionManagement` section in top-level `build.gradle` or `settings.gradle`.  
