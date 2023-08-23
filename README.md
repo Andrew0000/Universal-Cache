@@ -5,10 +5,10 @@
 Some functions:  
 ✔️ Share ongoing request(s) by parameters as key.  
 ✔️ Cache results of every request (in-memory / custom cache).  
-✔️ Provide convenient function to get cached or request new data based on passed arguments.  
+✔️ Provide a convenient function to get cached or request new data based on passed arguments.  
 
 The real-life reason and inspiration is to reduce network workload in big applications 
-with a lot of independent components which may use same API-endpoints at the nearly same time.
+with a lot of independent components that may use the same API-endpoints at the nearly same time.
 
 # Usage:
 
