@@ -92,55 +92,51 @@ publishing {
          * Explicitly configure that signing comes before publishing.
          * Otherwise the task execution of "publishAllPublicationsToSonatypeRepository" will fail.
          */
+        val signIosX64Publication by tasks.getting
+        val signIosArm64Publication by tasks.getting
+        val signIosSimulatorArm64Publication by tasks.getting
+        val signNativePublication by tasks.getting
+        val signJvmPublication by tasks.getting
+        val signKotlinMultiplatformPublication by tasks.getting
+
         val publishIosArm64PublicationToSonatypeRepository by tasks.getting
         val publishIosSimulatorArm64PublicationToSonatypeRepository by tasks.getting
-
-        val signIosX64Publication by tasks.getting
-        val signIosSimulatorArm64Publication by tasks.getting
+        val publishIosX64PublicationToSonatypeRepository by tasks.getting
+        val publishNativePublicationToSonatypeRepository by tasks.getting
+        val publishJvmPublicationToSonatypeRepository by tasks.getting
+        val publishKotlinMultiplatformPublicationToSonatypeRepository by tasks.getting
 
         publishIosArm64PublicationToSonatypeRepository.dependsOn(signIosX64Publication)
         publishIosArm64PublicationToSonatypeRepository.dependsOn(signIosSimulatorArm64Publication)
-        publishIosSimulatorArm64PublicationToSonatypeRepository.dependsOn(signIosX64Publication)
+        publishIosArm64PublicationToSonatypeRepository.dependsOn(signNativePublication)
+        publishIosArm64PublicationToSonatypeRepository.dependsOn(signJvmPublication)
+        publishIosArm64PublicationToSonatypeRepository.dependsOn(signKotlinMultiplatformPublication)
 
-        val publishIosX64PublicationToSonatypeRepository by tasks.getting
-        val signIosArm64Publication by tasks.getting
         publishIosX64PublicationToSonatypeRepository.dependsOn(signIosArm64Publication)
         publishIosX64PublicationToSonatypeRepository.dependsOn(signIosSimulatorArm64Publication)
+        publishIosX64PublicationToSonatypeRepository.dependsOn(signNativePublication)
+        publishIosX64PublicationToSonatypeRepository.dependsOn(signJvmPublication)
+        publishIosX64PublicationToSonatypeRepository.dependsOn(signKotlinMultiplatformPublication)
+
+        publishIosSimulatorArm64PublicationToSonatypeRepository.dependsOn(signIosX64Publication)
         publishIosSimulatorArm64PublicationToSonatypeRepository.dependsOn(signIosArm64Publication)
         publishIosSimulatorArm64PublicationToSonatypeRepository.dependsOn(signIosSimulatorArm64Publication)
-
-        val signNativePublication by tasks.getting
-        publishIosArm64PublicationToSonatypeRepository.dependsOn(signNativePublication)
-        publishIosX64PublicationToSonatypeRepository.dependsOn(signNativePublication)
-        publishIosX64PublicationToSonatypeRepository.dependsOn(signIosSimulatorArm64Publication)
         publishIosSimulatorArm64PublicationToSonatypeRepository.dependsOn(signNativePublication)
-        publishIosSimulatorArm64PublicationToSonatypeRepository.dependsOn(signIosSimulatorArm64Publication)
+        publishIosSimulatorArm64PublicationToSonatypeRepository.dependsOn(signJvmPublication)
+        publishIosSimulatorArm64PublicationToSonatypeRepository.dependsOn(signKotlinMultiplatformPublication)
 
-        val publishNativePublicationToSonatypeRepository by tasks.getting
         publishNativePublicationToSonatypeRepository.dependsOn(signIosX64Publication)
         publishNativePublicationToSonatypeRepository.dependsOn(signIosArm64Publication)
         publishNativePublicationToSonatypeRepository.dependsOn(signIosSimulatorArm64Publication)
-
-        val signJvmPublication by tasks.getting
         publishNativePublicationToSonatypeRepository.dependsOn(signJvmPublication)
-        publishIosX64PublicationToSonatypeRepository.dependsOn(signJvmPublication)
-        publishIosArm64PublicationToSonatypeRepository.dependsOn(signJvmPublication)
-        publishIosSimulatorArm64PublicationToSonatypeRepository.dependsOn(signJvmPublication)
-
-        val signKotlinMultiplatformPublication by tasks.getting
-        publishIosArm64PublicationToSonatypeRepository.dependsOn(signKotlinMultiplatformPublication)
-        publishIosX64PublicationToSonatypeRepository.dependsOn(signKotlinMultiplatformPublication)
-        publishIosSimulatorArm64PublicationToSonatypeRepository.dependsOn(signKotlinMultiplatformPublication)
         publishNativePublicationToSonatypeRepository.dependsOn(signKotlinMultiplatformPublication)
 
-        val publishJvmPublicationToSonatypeRepository by tasks.getting
         publishJvmPublicationToSonatypeRepository.dependsOn(signIosX64Publication)
         publishJvmPublicationToSonatypeRepository.dependsOn(signIosArm64Publication)
         publishJvmPublicationToSonatypeRepository.dependsOn(signKotlinMultiplatformPublication)
         publishJvmPublicationToSonatypeRepository.dependsOn(signNativePublication)
         publishJvmPublicationToSonatypeRepository.dependsOn(signIosSimulatorArm64Publication)
 
-        val publishKotlinMultiplatformPublicationToSonatypeRepository by tasks.getting
         publishKotlinMultiplatformPublicationToSonatypeRepository.dependsOn(signNativePublication)
         publishKotlinMultiplatformPublicationToSonatypeRepository.dependsOn(signJvmPublication)
         publishKotlinMultiplatformPublicationToSonatypeRepository.dependsOn(signIosX64Publication)
