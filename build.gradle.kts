@@ -44,6 +44,13 @@ kotlin {
             }
         }
     }
+    iosSimulatorArm64 {
+        binaries {
+            framework {
+                baseName = "library"
+            }
+        }
+    }
 
     sourceSets {
 
@@ -70,5 +77,7 @@ kotlin {
 
         val iosX64Main by getting
         val iosX64Test by getting
+
+        val iosSimulatorArm64Main by getting
     }
 }
