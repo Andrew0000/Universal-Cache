@@ -26,7 +26,7 @@ class Requester<P : Any, T : Any>(
      *
      * @see [requestShared]
      */
-    suspend fun request(
+    fun request(
         params: P,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
     ): Flow<T> =
@@ -45,7 +45,7 @@ class Requester<P : Any, T : Any>(
      *
      * @return shared flow that other callers with same [params] can be attached to.
      */
-    suspend fun requestShared(
+    fun requestShared(
         params: P,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
     ): Flow<T> {

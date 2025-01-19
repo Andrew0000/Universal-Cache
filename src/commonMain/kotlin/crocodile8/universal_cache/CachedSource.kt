@@ -70,7 +70,7 @@ class CachedSource<P : Any, T : Any>(
      *
      * @return Flow that emits 1 (or 2 in case of [FromCache.CACHED_THEN_LOAD]) elements or exception.
      */
-    suspend fun get(
+    fun get(
         params: P,
         fromCache: FromCache,
         shareOngoingRequest: Boolean = true,
@@ -83,7 +83,7 @@ class CachedSource<P : Any, T : Any>(
     /**
      * See [get]
      */
-    suspend fun getRaw(
+    fun getRaw(
         params: P,
         fromCache: FromCache,
         shareOngoingRequest: Boolean = true,
@@ -150,7 +150,7 @@ class CachedSource<P : Any, T : Any>(
     internal suspend fun getOngoingSize() =
         requester.getOngoingSize()
 
-    private suspend fun getFromSource(
+    private fun getFromSource(
         params: P,
         additionalKey: Any?,
         shareOngoing: Boolean
