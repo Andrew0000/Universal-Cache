@@ -57,6 +57,8 @@ class Requester<P : Any, T : Any>(
 
                 if (ongoingFlow == null) {
                     val scope = CoroutineScope(dispatcher)
+                    // Keep a separate flag to avoid double removing from [ongoings]
+                    // which can be a mistake if another stream adds to [ongoings] after the first removal
                     val isInOngoings = BooleanRef(true)
                     ongoingFlow =
                         flow { emit(source(params)) }
@@ -65,7 +67,7 @@ class Requester<P : Any, T : Any>(
                             .catch { emit(Result.failure(it)) }
                             .take(1)
                             .onEach {
-                                // It's better to release ongoing earlier then .onCompletion()
+                                // It's better to release ongoing earlier than .onCompletion()
                                 // but only .onCompletion() will be called on cancellation
                                 // so try in both places
                                 removeOngoing(params, isInOngoings)
