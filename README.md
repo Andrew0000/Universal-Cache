@@ -76,6 +76,11 @@ FromCache.CACHED_THEN_LOAD
 ### Requester  
 Wrapper that can share ongoing request(s) if there is any in progress with the given params.  
 It's used in **CachedSource** but you can use it independently.  
+  
+Main differences from **shareIn** + **WhileSubscribed**:  
+* **Requester** focuses on the emission of a single value.
+* Rethrows possible exception to downstreams (**shareIn** swallows exceptions and trows to the specified scope).
+* Can share multiple streams with distinct keys at the same time.
 ```
 val requester = Requester(source)
 ...
