@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.vanniktech.mavenPublish)
 }
 
-version = "1.1.8"
+version = "1.2.0"
 group = "io.github.andrew0000"
 
 kotlin {
