@@ -1,15 +1,18 @@
 package crocodile8.universal_cache.request
 
 import crocodile8.universal_cache.CachedSourceNoParams
-import crocodile8.universal_cache.utils.BooleanRef
-import crocodile8.universal_cache.utils.Logger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -18,7 +21,7 @@ class Requester<P : Any, T : Any>(
     private val source: suspend (params: P) -> T,
 ) {
 
-    private val ongoings = mutableMapOf<P, Flow<T>>()
+    private val ongoings = mutableMapOf<P, Ongoing<T>>()
     private val ongoingsLock = Mutex()
 
     /**
@@ -48,79 +51,57 @@ class Requester<P : Any, T : Any>(
     fun requestShared(
         params: P,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
-    ): Flow<T> {
-        val lazyFlow = suspend {
-            ongoingsLock.withLock {
-
-                var ongoingFlow = ongoings[params]
-                Logger.log { "requestShared: $params / ongoing: $ongoingFlow" }
-
-                if (ongoingFlow == null) {
-                    val scope = CoroutineScope(dispatcher)
-                    // Keep a separate flag to avoid double removing from [ongoings]
-                    // which can be a mistake if another stream adds to [ongoings] after the first removal
-                    val isInOngoings = BooleanRef(true)
-                    ongoingFlow =
-                        flow { emit(source(params)) }
-                            .flowOn(dispatcher)
-                            .map { Result.success(it) }
-                            .catch { emit(Result.failure(it)) }
-                            .take(1)
-                            .onEach {
-                                // It's better to release ongoing earlier than .onCompletion()
-                                // but only .onCompletion() will be called on cancellation
-                                // so try in both places
-                                removeOngoing(params, isInOngoings)
-                            }
-                            .onCompletion {
-                                Logger.log { "requestShared onCompletion: $params" }
-                                removeOngoing(params, isInOngoings)
-                                scope.cancel()
-                            }
-                            .shareIn(
-                                scope,
-                                SharingStarted.WhileSubscribed(),
-                                1
-                            )
-                            .take(1)
-                            // Shared flow doesn't throw exceptions so wrap and re-throw possible exceptions
-                            .map {
-                                if (it.isSuccess) {
-                                    it.getOrThrow()
-                                } else {
-                                    throw it.exceptionOrNull()!!
-                                }
-                            }
-                    ongoings[params] = ongoingFlow
-                }
-                ongoingFlow
-            }
+    ): Flow<T> = flow {
+        val ongoing = ongoingsLock.withLock {
+            val existing = ongoings[params]?.takeIf { !it.deferred.isCompleted }
+            val item = existing ?: createOngoing(params, dispatcher)
+                .also { ongoings[params] = it }
+            item.subscribers++
+            item
         }
-        return flow {
-            emitAll(lazyFlow())
+
+        // No suspension point between leaving the lock and entering try/finally,
+        // so the release() is guaranteed.
+
+        val value = try {
+            ongoing.deferred.await()
+        } finally {
+            release(params, ongoing)
         }
+        emit(value)
+    }
+
+    private fun createOngoing(params: P, dispatcher: CoroutineDispatcher): Ongoing<T> {
+        val scope = CoroutineScope(dispatcher + Job())
+        val deferred = scope.async {
+            source(params)
+        }
+        deferred.invokeOnCompletion {
+            scope.cancel()
+        }
+        return Ongoing(deferred, scope)
     }
 
     internal suspend fun getOngoingSize() =
-        ongoingsLock.withLock {
-            val size = ongoings.size
-            Logger.log { "getOngoingSize: $size" }
-            size
-        }
+        ongoingsLock.withLock { ongoings.size }
 
-    private suspend fun removeOngoing(params: P, isInOngoings: BooleanRef) =
+    private suspend fun release(params: P, ongoing: Ongoing<T>) =
         withContext(NonCancellable) {
-            try {
-                ongoingsLock.withLock {
-                    if (isInOngoings.value) {
+            ongoingsLock.withLock {
+                ongoing.subscribers--
+                if (ongoing.subscribers == 0) {
+                    if (ongoings[params] === ongoing) {
                         ongoings.remove(params)
-                        isInOngoings.value = false
-                        Logger.log { "requestShared removeOngoing: $params, size: ${ongoings.size}" }
                     }
+                    ongoing.scope.cancel()
                 }
-            } catch (t: Throwable) {
-                Logger.log { "requestShared removeOngoing -> error in lock: $t" }
-                throw t
             }
         }
+}
+
+private class Ongoing<T>(
+    val deferred: Deferred<T>,
+    val scope: CoroutineScope,
+) {
+    var subscribers: Int = 0
 }
