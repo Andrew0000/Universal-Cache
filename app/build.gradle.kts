@@ -47,21 +47,12 @@ android {
     }
 }
 
-val useLocalLib = (project.findProperty("useLocalLib")?.toString()?.toBoolean() ?: false)
-    .also { println("useLocalLib: $it") }
-
 dependencies {
 
-    if (useLocalLib) {
-        implementation(project(":lib"))
-    } else {
-        implementation("io.github.andrew0000:universal-cache:1.+")
-    }
-
-    //val libDepLocalImplementation by configurations
-    //val libDepMavenImplementation by configurations
-    //libDepLocalImplementation(project(mapOf("path" to ":lib")))
-    //libDepMavenImplementation("io.github.andrew0000:universal-cache:1.+")
+    // Use local module during development (libDepLocal build variant in Android Studio)
+    // And the published variant if the libDepMaven build variant is selected
+    add("libDepLocalImplementation", project(":lib"))
+    add("libDepMavenImplementation", "io.github.andrew0000:universal-cache:1.+")
 
     implementation(libs.core.ktx)
     implementation(libs.appcompat)
