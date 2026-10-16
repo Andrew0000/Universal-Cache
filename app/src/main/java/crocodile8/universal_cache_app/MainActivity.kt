@@ -1,16 +1,25 @@
 package crocodile8.universal_cache_app
 
 import android.annotation.SuppressLint
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.widget.TextView
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.lifecycle.lifecycleScope
+import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import crocodile8.universal_cache.CachedSourceNoParams
 import crocodile8.universal_cache.FromCache
 import crocodile8.universal_cache.get
-import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -19,55 +28,71 @@ import java.util.concurrent.atomic.AtomicInteger
 @SuppressLint("SetTextI18n")
 class MainActivity : AppCompatActivity() {
 
-    private val taskInvocationCnt = AtomicInteger()
-    private val longRunningTask = {
-        Thread.sleep(1000)
-        Log.i("test_", "test_ longRunningTask")
-        taskInvocationCnt.incrementAndGet()
-    }
-    private val source = CachedSourceNoParams(longRunningTask)
-
-    private lateinit var textView1: TextView
-    private lateinit var textView2: TextView
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
-        textView1 = findViewById(R.id.textView_1)
-        textView2 = findViewById(R.id.textView_2)
-
-        launchAndObserveParallelRequests()
-        observeUpdates()
+        setContent {
+            MainScreen()
+        }
     }
+}
 
-    private fun launchAndObserveParallelRequests() {
-        lifecycleScope.launch {
+@Preview
+@Composable
+private fun MainScreen() {
+    Column(
+        modifier = Modifier
+            .safeContentPadding(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        val source = remember {
+            val taskInvocationCnt = AtomicInteger()
+            CachedSourceNoParams(
+                source = {
+                    // Loading emulation
+                    Thread.sleep(1000)
+                    Log.i("test_", "test_ longRunningTask")
+                    taskInvocationCnt.incrementAndGet()
+                }
+            )
+        }
+
+        val text1 = remember { mutableStateOf("") }
+        val text2 = remember { mutableStateOf("") }
+
+        // Launch and observe parallel requests
+        LaunchedEffect(Unit) {
             source.get(FromCache.IF_HAVE)
                 .collect {
                     Log.i("test_", "test_ collect 1: $it")
-                    textView1.text = "Ready, invocation count: $it"
+                    text1.value = "Ready, invocation count: $it"
                 }
             source.get(FromCache.IF_HAVE)
                 .collect {
                     Log.i("test_", "test_ collect 2: $it")
-                    textView1.text = "Ready, invocation count: $it"
+                    text1.value = "Ready, invocation count: $it"
                 }
             source.get(FromCache.IF_HAVE)
                 .collect {
                     Log.i("test_", "test_ collect 3: $it")
-                    textView1.text = "Ready, invocation count: $it"
+                    text1.value = "Ready, invocation count: $it"
                 }
         }
-    }
 
-    private fun observeUpdates() {
-        lifecycleScope.launch {
+        // Observe updates
+        LaunchedEffect(Unit) {
             source.updates.collect {
                 Log.i("test_", "test_ collect updates: $it")
-                textView2.text = "Update: $it"
+                text2.value = "Update: $it"
             }
         }
-    }
 
+        Text(
+            text = text1.value
+        )
+
+        Text(
+            text = text2.value
+        )
+    }
 }
