@@ -1,16 +1,24 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_11
+    }
 }
 
 android {
     namespace = "crocodile8.universal_cache_app"
-    compileSdk = 33
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
         applicationId = "crocodile8.universal_cache_app"
-        minSdk = 24
-        targetSdk = 33
+        minSdk = libs.versions.android.minSdk.get().toInt()
+        targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
 
@@ -24,14 +32,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-    kotlinOptions {
-        jvmTarget = "1.8"
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
-    setFlavorDimensions(listOf("libDep"))
+    flavorDimensions += "libDep"
     productFlavors {
         create("libDepLocal") {
             dimension = "libDep"
@@ -44,22 +49,24 @@ android {
 
 dependencies {
 
-    val libDepLocalImplementation by configurations
-    val libDepMavenImplementation by configurations
-    libDepLocalImplementation(project(mapOf("path" to ":")))
-    libDepMavenImplementation("io.github.andrew0000:universal-cache:1.+")
+    // Use local module during development (libDepLocal build variant in Android Studio)
+    // And the published variant if the libDepMaven build variant is selected
+    add("libDepLocalImplementation", project(":lib"))
+    add("libDepMavenImplementation", "io.github.andrew0000:universal-cache:1.+")
 
-    implementation("androidx.core:core-ktx:1.10.1")
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.9.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation(libs.core.ktx)
+    implementation(libs.appcompat)
+    implementation(libs.material)
 
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.2")
+    implementation(libs.lifecycle.runtime.ktx)
+    implementation(libs.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
 
-    testImplementation("junit:junit:4.13.2")
+    implementation(libs.bundles.compose.android)
+    debugImplementation(libs.compose.ui.tooling)
 
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    testImplementation(libs.junit)
+
+    androidTestImplementation(libs.ext.junit)
+    androidTestImplementation(libs.espresso.core)
 }
