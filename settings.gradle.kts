@@ -14,9 +14,9 @@ dependencyResolutionManagement {
     }
 }
 
+rootProject.name = "universal_cache_project"
+
 include(":app")
 include(":lib")
-
-rootProject.name = "universal_cache_project"
 
 includeBuild("convention-plugins")

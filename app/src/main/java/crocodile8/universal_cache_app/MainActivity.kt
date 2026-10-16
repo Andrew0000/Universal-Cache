@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.TextView
+import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
 import crocodile8.universal_cache.CachedSourceNoParams
 import crocodile8.universal_cache.FromCache
@@ -31,6 +32,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContentView(R.layout.activity_main)
         textView1 = findViewById(R.id.textView_1)
         textView2 = findViewById(R.id.textView_2)
