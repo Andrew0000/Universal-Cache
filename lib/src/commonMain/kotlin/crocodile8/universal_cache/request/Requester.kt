@@ -71,6 +71,9 @@ class Requester<P : Any, T : Any>(
         emit(value)
     }
 
+    internal suspend fun getOngoingSize() =
+        ongoingsLock.withLock { ongoings.size }
+
     private fun createOngoing(params: P, dispatcher: CoroutineDispatcher): Ongoing<T> {
         val scope = CoroutineScope(dispatcher + Job())
         val deferred = scope.async {
@@ -81,9 +84,6 @@ class Requester<P : Any, T : Any>(
         }
         return Ongoing(deferred, scope)
     }
-
-    internal suspend fun getOngoingSize() =
-        ongoingsLock.withLock { ongoings.size }
 
     private suspend fun release(params: P, ongoing: Ongoing<T>) =
         withContext(NonCancellable) {
