@@ -18,5 +18,3 @@ rootProject.name = "universal_cache_project"
 
 include(":app")
 include(":lib")
-
-includeBuild("convention-plugins")
