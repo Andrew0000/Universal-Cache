@@ -6,9 +6,12 @@ import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,9 +35,22 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MainScreen()
+            MyAppTheme {
+                MainScreen()
+            }
         }
     }
+}
+
+@Composable
+private fun MyAppTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
+) {
+    MaterialTheme(
+        colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
+        content = content
+    )
 }
 
 @Preview
@@ -42,7 +58,8 @@ class MainActivity : AppCompatActivity() {
 private fun MainScreen() {
     Column(
         modifier = Modifier
-            .safeContentPadding(),
+            .safeContentPadding()
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         val source = remember {
@@ -88,11 +105,13 @@ private fun MainScreen() {
         }
 
         Text(
-            text = text1.value
+            text = text1.value,
+            color = MaterialTheme.colorScheme.onBackground,
         )
 
         Text(
-            text = text2.value
+            text = text2.value,
+            color = MaterialTheme.colorScheme.onBackground,
         )
     }
 }
