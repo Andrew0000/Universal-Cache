@@ -7,6 +7,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.milliseconds
 
 internal class RequesterTest {
 
@@ -19,7 +20,7 @@ internal class RequesterTest {
     fun `1 collect + wait + 2 collect in parallel = 2 real requests`() = runTest {
         val sourceInvocationCnt = AtomicInteger()
         val requester = Requester<String, Int>(source = {
-            delay(100)
+            delay(100.milliseconds)
             sourceInvocationCnt.incrementAndGet()
         })
 
@@ -48,7 +49,7 @@ internal class RequesterTest {
     fun `1 collect + wait + 2 collect in parallel + 1 flow instance = 2 real requests`() = runTest {
         val sourceInvocationCnt = AtomicInteger()
         val requester = Requester<String, Int>(source = {
-            delay(100)
+            delay(100.milliseconds)
             sourceInvocationCnt.incrementAndGet()
         })
         val flow = requester.requestShared("1", dispatcher = getTestDispatcher())
@@ -81,7 +82,7 @@ internal class RequesterTest {
             "2" to AtomicInteger(),
         )
         val requester = Requester<String, Int>(source = {
-            delay(100)
+            delay(100.milliseconds)
             sourceInvocationCnt[it]!!.incrementAndGet()
         })
 
@@ -118,7 +119,7 @@ internal class RequesterTest {
             "2" to AtomicInteger(),
         )
         val requester = Requester<String, Int>(source = {
-            delay(100)
+            delay(100.milliseconds)
             sourceInvocationCnt[it]!!.incrementAndGet()
         })
         val flow1 = requester.requestShared("1", dispatcher = getTestDispatcher())

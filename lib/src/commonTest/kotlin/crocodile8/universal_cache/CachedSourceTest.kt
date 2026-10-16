@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.milliseconds
 
 internal class CachedSourceTest {
 
@@ -104,7 +105,7 @@ internal class CachedSourceTest {
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(
             source = {
-                delay(50) // Delay to allow several requests attach to the same ongoing
+                delay(50.milliseconds) // Delay to allow several requests attach to the same ongoing
                 sourceInvocationCnt.incrementAndGet()
             },
             dispatcher = getTestDispatcher(),
@@ -144,7 +145,7 @@ internal class CachedSourceTest {
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(
             source = {
-                delay(50) // Delay to allow several requests attach to the same ongoing
+                delay(50.milliseconds) // Delay to allow several requests attach to the same ongoing
                 sourceInvocationCnt.incrementAndGet()
             },
             dispatcher = getTestDispatcher(),
@@ -156,12 +157,12 @@ internal class CachedSourceTest {
                     .collect { collected1 = it }
             }
             val a2 = async {
-                delay(5) // Ensure order of results
+                delay(5.milliseconds) // Ensure order of results
                 source.get(Unit, fromCache = FromCache.NEVER, shareOngoingRequest = false)
                     .collect { collected2 = it }
             }
             val a3 = async {
-                delay(10) // Ensure order of results
+                delay(10.milliseconds) // Ensure order of results
                 source.get(Unit, fromCache = FromCache.NEVER, shareOngoingRequest = false)
                     .collect { collected3 = it }
             }
@@ -186,7 +187,7 @@ internal class CachedSourceTest {
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(
             source = {
-                delay(50) // Delay to allow several requests attach to the same ongoing
+                delay(50.milliseconds) // Delay to allow several requests attach to the same ongoing
                 sourceInvocationCnt.incrementAndGet()
             },
             dispatcher = getTestDispatcher(),
@@ -205,11 +206,11 @@ internal class CachedSourceTest {
                 source.get(Unit, fromCache = FromCache.NEVER)
                     .collect { collected3 = it }
             }
-            delay(10)
+            delay(10.milliseconds)
             a1.cancel()
             a2.cancel()
             a3.cancel()
-            delay(100)
+            delay(100.milliseconds)
         }
 
         result {
@@ -228,7 +229,7 @@ internal class CachedSourceTest {
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(
             source = {
-                delay(50) // Delay to allow several requests attach to the same ongoing
+                delay(50.milliseconds) // Delay to allow several requests attach to the same ongoing
                 sourceInvocationCnt.incrementAndGet()
             },
             dispatcher = getTestDispatcher(),
@@ -247,11 +248,11 @@ internal class CachedSourceTest {
                 source.get(Unit, fromCache = FromCache.NEVER)
                     .collect { collected3 = it }
             }
-            delay(10)
+            delay(10.milliseconds)
             a1.cancel()
             a2.cancel()
             a3.cancel()
-            delay(100)
+            delay(100.milliseconds)
 
             val a4 = async {
                 source.get(Unit, fromCache = FromCache.NEVER)
@@ -289,7 +290,7 @@ internal class CachedSourceTest {
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(
             source = {
-                delay(50) // Delay to allow several requests attach to the same ongoing
+                delay(50.milliseconds) // Delay to allow several requests attach to the same ongoing
                 sourceInvocationCnt.incrementAndGet()
             },
             dispatcher = getTestDispatcher(),
@@ -452,7 +453,7 @@ internal class CachedSourceTest {
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(
             source = {
-                delay(100)
+                delay(100.milliseconds)
                 if (sourceInvocationCnt.incrementAndGet() == 1) {
                     1
                 } else {
@@ -483,7 +484,7 @@ internal class CachedSourceTest {
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(
             source = {
-                delay(50) // Delay to allow several requests attach to the same ongoing
+                delay(50.milliseconds) // Delay to allow several requests attach to the same ongoing
                 if (sourceInvocationCnt.incrementAndGet() == 1) {
                     1
                 } else {
@@ -690,7 +691,7 @@ internal class CachedSourceTest {
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(
             source = {
-                delay(100)
+                delay(100.milliseconds)
                 sourceInvocationCnt.incrementAndGet()
             },
             timeProvider = zeroTimeProvider(),
@@ -702,7 +703,7 @@ internal class CachedSourceTest {
                 source.getRaw(Unit, fromCache = FromCache.NEVER)
                     .collect { collected1 += it }
             }
-            delay(50)
+            delay(50.milliseconds)
             a1.cancel()
             source.getRaw(Unit, fromCache = FromCache.NEVER)
                 .collect { collected2 += it }
@@ -721,7 +722,7 @@ internal class CachedSourceTest {
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<String, Int>(
             source = {
-                delay(100)
+                delay(100.milliseconds)
                 sourceInvocationCnt.incrementAndGet()
             },
             timeProvider = zeroTimeProvider(),
@@ -733,7 +734,7 @@ internal class CachedSourceTest {
                 source.getRaw("1", fromCache = FromCache.NEVER)
                     .collect {}
             }
-            delay(50)
+            delay(50.milliseconds)
             a1.cancel()
             source.getRaw("2", fromCache = FromCache.NEVER)
                 .collect {}
