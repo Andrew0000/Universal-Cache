@@ -1,7 +1,6 @@
 package crocodile8.universal_cache
 
 import crocodile8.universal_cache.test_utils.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onEach
@@ -12,7 +11,6 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
 internal class CachedSourceExtTest {
 
     @BeforeTest

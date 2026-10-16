@@ -7,7 +7,6 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
@@ -16,6 +15,7 @@ dependencyResolutionManagement {
 }
 
 include(":app")
+include(":lib")
 
 rootProject.name = "universal_cache_project"
 
