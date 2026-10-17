@@ -66,6 +66,10 @@ infix fun Int?.assert(expected: Int) {
     assertEquals(expected, this)
 }
 
+infix fun String?.assert(expected: String) {
+    assertEquals(expected, this)
+}
+
 infix fun Boolean?.assert(expected: Boolean) {
     assertEquals(expected, this)
 }
