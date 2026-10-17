@@ -7,11 +7,11 @@ import crocodile8.universal_cache.test_utils.action
 import crocodile8.universal_cache.test_utils.assert
 import crocodile8.universal_cache.test_utils.assertNoOngoings
 import crocodile8.universal_cache.test_utils.result
+import crocodile8.universal_cache.test_utils.runRepeatedTest
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
@@ -26,7 +26,7 @@ internal class CachedSourceWithMultipleParamsTest {
     }
 
     @Test
-    fun `FromCache NEVER + 1 request`() = runTest(testDispatcher) {
+    fun `FromCache NEVER + 1 request`() = runRepeatedTest(testDispatcher) {
         var collected = -1
         val source = CachedSource<String, Int>(source = { 1 })
 
@@ -42,7 +42,7 @@ internal class CachedSourceWithMultipleParamsTest {
     }
 
     @Test
-    fun `FromCache NEVER + 2+1 parallel`() = runTest(testDispatcher) {
+    fun `FromCache NEVER + 2+1 parallel`() = runRepeatedTest(testDispatcher) {
         var collected1 = -1
         var collected2 = -1
         var collected3 = -1
@@ -81,7 +81,7 @@ internal class CachedSourceWithMultipleParamsTest {
     }
 
     @Test
-    fun `FromCache NEVER + 2+1 parallel + 2+1 parallel`() = runTest(testDispatcher) {
+    fun `FromCache NEVER + 2+1 parallel + 2+1 parallel`() = runRepeatedTest(testDispatcher) {
         var collected1 = -1
         var collected2 = -1
         var collected3 = -1
@@ -145,7 +145,7 @@ internal class CachedSourceWithMultipleParamsTest {
     }
 
     @Test
-    fun `FromCache IF_FAILED + 1 success`() = runTest(testDispatcher) {
+    fun `FromCache IF_FAILED + 1 success`() = runRepeatedTest(testDispatcher) {
         var collected = -1
         val source = CachedSource<String, Int>(source = { 1 })
 
@@ -161,7 +161,7 @@ internal class CachedSourceWithMultipleParamsTest {
     }
 
     @Test
-    fun `FromCache IF_FAILED + 1 failure = Catch exception`() = runTest(testDispatcher) {
+    fun `FromCache IF_FAILED + 1 failure = Catch exception`() = runRepeatedTest(testDispatcher) {
         var collected = -1
         val source = CachedSource<String, Int>(source = { throw RuntimeException() })
 
@@ -178,7 +178,7 @@ internal class CachedSourceWithMultipleParamsTest {
     }
 
     @Test
-    fun `FromCache IF_FAILED + 1 success + 1 failure + 1 failure with another param = Get cached + catch`() = runTest(testDispatcher) {
+    fun `FromCache IF_FAILED + 1 success + 1 failure + 1 failure with another param = Get cached + catch`() = runRepeatedTest(testDispatcher) {
         var collected = -1
         var caught = false
         val sourceInvocationCnt = AtomicInteger()
@@ -211,7 +211,7 @@ internal class CachedSourceWithMultipleParamsTest {
     }
 
     @Test
-    fun `FromCache IF_HAVE + 1 failure = Catch exception`() = runTest(testDispatcher) {
+    fun `FromCache IF_HAVE + 1 failure = Catch exception`() = runRepeatedTest(testDispatcher) {
         var collected = -1
         val source = CachedSource<String, Int>(source = { throw RuntimeException() })
 
@@ -228,7 +228,7 @@ internal class CachedSourceWithMultipleParamsTest {
     }
 
     @Test
-    fun `FromCache IF_HAVE + 1 success + 1 failure + 1 failure with another param = Get cached + catch`() = runTest(testDispatcher) {
+    fun `FromCache IF_HAVE + 1 success + 1 failure + 1 failure with another param = Get cached + catch`() = runRepeatedTest(testDispatcher) {
         var collected = -1
         var caught = false
         val sourceInvocationCnt = AtomicInteger()
@@ -261,7 +261,7 @@ internal class CachedSourceWithMultipleParamsTest {
     }
 
     @Test
-    fun `FromCache IF_HAVE + 1 success + 1 with another param + 1 failure = Catch`() = runTest(testDispatcher) {
+    fun `FromCache IF_HAVE + 1 success + 1 with another param + 1 failure = Catch`() = runRepeatedTest(testDispatcher) {
         var collected1 = -1
         var collected2 = -1
         var collected3 = -1
@@ -300,7 +300,7 @@ internal class CachedSourceWithMultipleParamsTest {
     }
 
     @Test
-    fun `FromCache IF_HAVE + 1 success + different maxAges = Get cached + load`() = runTest(testDispatcher) {
+    fun `FromCache IF_HAVE + 1 success + different maxAges = Get cached + load`() = runRepeatedTest(testDispatcher) {
         var collected1: CachedSourceResult<Int>? = null
         var collected2: CachedSourceResult<Int>? = null
         val source = CachedSource<String, Int>(

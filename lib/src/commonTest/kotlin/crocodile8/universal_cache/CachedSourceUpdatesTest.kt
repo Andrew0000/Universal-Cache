@@ -6,11 +6,11 @@ import crocodile8.universal_cache.test_utils.action
 import crocodile8.universal_cache.test_utils.assertAnyOrder
 import crocodile8.universal_cache.test_utils.assertNoOngoings
 import crocodile8.universal_cache.test_utils.result
+import crocodile8.universal_cache.test_utils.runRepeatedTest
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
@@ -24,7 +24,7 @@ class CachedSourceUpdatesTest {
     }
 
     @Test
-    fun `FromCache NEVER = Updates are collected`() = runTest(testDispatcher) {
+    fun `FromCache NEVER = Updates are collected`() = runRepeatedTest(testDispatcher) {
         val collectedUpdates = mutableListOf<Int>()
         val (source, _) = TestUtils.createStringIntSource()
 
@@ -34,6 +34,7 @@ class CachedSourceUpdatesTest {
                     collectedUpdates += result.value
                 }
             }
+            testDispatcher.scheduler.advanceUntilIdle()
             source.get("", FromCache.NEVER).collect {}
             source.get("", FromCache.NEVER).collect {}
             source.get("", FromCache.NEVER).collect {}
@@ -47,7 +48,7 @@ class CachedSourceUpdatesTest {
     }
 
     @Test
-    fun `FromCache IF_HAVE = Updates are collected`() = runTest(testDispatcher) {
+    fun `FromCache IF_HAVE = Updates are collected`() = runRepeatedTest(testDispatcher) {
         val collectedUpdates = mutableListOf<Int>()
         val (source, _) = TestUtils.createStringIntSource()
 
@@ -57,6 +58,7 @@ class CachedSourceUpdatesTest {
                     collectedUpdates += result.value
                 }
             }
+            testDispatcher.scheduler.advanceUntilIdle()
             source.get("1", FromCache.IF_HAVE).collect {}
             source.get("1", FromCache.IF_HAVE).collect {}
             source.get("2", FromCache.IF_HAVE).collect {}
@@ -70,7 +72,7 @@ class CachedSourceUpdatesTest {
     }
 
     @Test
-    fun `FromCache NEVER + multiple success + errors = Updates and errors are collected`() = runTest(testDispatcher) {
+    fun `FromCache NEVER + multiple success + errors = Updates and errors are collected`() = runRepeatedTest(testDispatcher) {
         val collectedUpdates = mutableListOf<Int>()
         val collectedErrors = mutableListOf<Throwable>()
         val sourceInvocationCnt = AtomicInteger()
@@ -94,6 +96,7 @@ class CachedSourceUpdatesTest {
                     collectedErrors += throwable
                 }
             }
+            testDispatcher.scheduler.advanceUntilIdle()
             source.get("1", FromCache.NEVER).catch {}.collect {}
             source.get("2", FromCache.NEVER).catch {}.collect {}
             source.get("3", FromCache.NEVER).catch {}.collect {}
