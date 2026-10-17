@@ -1,17 +1,25 @@
 package crocodile8.universal_cache
 
-import crocodile8.universal_cache.test_utils.*
+import crocodile8.universal_cache.test_utils.TestUtils
+import crocodile8.universal_cache.test_utils.action
+import crocodile8.universal_cache.test_utils.assert
+import crocodile8.universal_cache.test_utils.assertAnyOrder
+import crocodile8.universal_cache.test_utils.assertNoOngoings
+import crocodile8.universal_cache.test_utils.result
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 internal class CachedSourceExtTest {
+
+    private val testDispatcher = StandardTestDispatcher()
 
     @BeforeTest
     fun setUp() {
@@ -19,7 +27,7 @@ internal class CachedSourceExtTest {
     }
 
     @Test
-    fun `getOrRequest + have cache + predicate ok = Get from cache`() = runTest {
+    fun `getOrRequest + have cache + predicate ok = Get from cache`() = runTest(testDispatcher) {
         var collected: Int? = null
         val (source, invocations) = TestUtils.createStringIntSource()
 
@@ -38,7 +46,7 @@ internal class CachedSourceExtTest {
     }
 
     @Test
-    fun `getOrRequest + have cache + predicate false = Request again`() = runTest {
+    fun `getOrRequest + have cache + predicate false = Request again`() = runTest(testDispatcher) {
         var collected: Int? = null
         val (source, invocations) = TestUtils.createStringIntSource()
 
@@ -57,7 +65,7 @@ internal class CachedSourceExtTest {
     }
 
     @Test
-    fun `observeAndRequest + 3 emits with same key + 2 emits with different key = All needed are collected`() = runTest {
+    fun `observeAndRequest + 3 emits with same key + 2 emits with different key = All needed are collected`() = runTest(testDispatcher) {
         val mutexUntilFirstEmit = Mutex(locked = true)
         val collected = mutableListOf<Int>()
         val (source, invocations) = TestUtils.createStringIntSource()
@@ -87,7 +95,7 @@ internal class CachedSourceExtTest {
     }
 
     @Test
-    fun `observeAndRequest + 3 emits + 2 emits different key + error = All needed are collected`() = runTest {
+    fun `observeAndRequest + 3 emits + 2 emits different key + error = All needed are collected`() = runTest(testDispatcher) {
         val mutexUntilFirstEmit = Mutex(locked = true)
         val collected = mutableListOf<Int>()
         val (source, invocations) = TestUtils.createStringIntSource {

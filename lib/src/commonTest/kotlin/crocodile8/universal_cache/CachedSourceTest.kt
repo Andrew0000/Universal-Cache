@@ -1,10 +1,15 @@
 package crocodile8.universal_cache
 
-import crocodile8.universal_cache.test_utils.*
+import crocodile8.universal_cache.test_utils.AtomicInteger
 import crocodile8.universal_cache.test_utils.TestUtils.zeroTimeProvider
+import crocodile8.universal_cache.test_utils.action
+import crocodile8.universal_cache.test_utils.assert
+import crocodile8.universal_cache.test_utils.assertNoOngoings
+import crocodile8.universal_cache.test_utils.result
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -12,13 +17,15 @@ import kotlin.time.Duration.Companion.milliseconds
 
 internal class CachedSourceTest {
 
+    private val testDispatcher = StandardTestDispatcher()
+
     @BeforeTest
     fun setUp() {
         UniversalCache.printLogs = true
     }
 
     @Test
-    fun `FromCache ONLY + no cache = Exception`() = runTest {
+    fun `FromCache ONLY + no cache = Exception`() = runTest(testDispatcher) {
         var collected = -1
         var caught = false
         val source = CachedSource<Unit, Int>(source = { 1 })
@@ -37,7 +44,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache ONLY + have cache = Get cached`() = runTest {
+    fun `FromCache ONLY + have cache = Get cached`() = runTest(testDispatcher) {
         var collected: CachedSourceResult<Int>? = null
         var caught = false
         val source = CachedSource<Unit, Int>(
@@ -61,7 +68,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache ONLY + have cache but old for maxAge = Exception`() = runTest {
+    fun `FromCache ONLY + have cache but old for maxAge = Exception`() = runTest(testDispatcher) {
         var collected = -1
         var caught = false
         val source = CachedSource<Unit, Int>(source = { 2 })
@@ -82,7 +89,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache NEVER + 1 request`() = runTest {
+    fun `FromCache NEVER + 1 request`() = runTest(testDispatcher) {
         var collected = -1
         val source = CachedSource<Unit, Int>(source = { 1 })
 
@@ -98,7 +105,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache NEVER + 3 parallel = Receive from the same ongoing`() = runTest {
+    fun `FromCache NEVER + 3 parallel = Receive from the same ongoing`() = runTest(testDispatcher) {
         var collected1 = -1
         var collected2 = -1
         var collected3 = -1
@@ -108,7 +115,7 @@ internal class CachedSourceTest {
                 delay(50.milliseconds) // Delay to allow several requests attach to the same ongoing
                 sourceInvocationCnt.incrementAndGet()
             },
-            dispatcher = getTestDispatcher(),
+            dispatcher = testDispatcher,
         )
 
         action {
@@ -138,7 +145,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache NEVER + 3 parallel + don't share = Receive different values`() = runTest {
+    fun `FromCache NEVER + 3 parallel + don't share = Receive different values`() = runTest(testDispatcher) {
         var collected1 = -1
         var collected2 = -1
         var collected3 = -1
@@ -148,7 +155,7 @@ internal class CachedSourceTest {
                 delay(50.milliseconds) // Delay to allow several requests attach to the same ongoing
                 sourceInvocationCnt.incrementAndGet()
             },
-            dispatcher = getTestDispatcher(),
+            dispatcher = testDispatcher,
         )
 
         action {
@@ -180,7 +187,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache NEVER + 3 parallel + cancel = Nothing received`() = runTest {
+    fun `FromCache NEVER + 3 parallel + cancel = Nothing received`() = runTest(testDispatcher) {
         var collected1 = -1
         var collected2 = -1
         var collected3 = -1
@@ -190,7 +197,7 @@ internal class CachedSourceTest {
                 delay(50.milliseconds) // Delay to allow several requests attach to the same ongoing
                 sourceInvocationCnt.incrementAndGet()
             },
-            dispatcher = getTestDispatcher(),
+            dispatcher = testDispatcher,
         )
 
         action {
@@ -222,7 +229,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache NEVER + 3 parallel + cancel + again = Receive from the same ongoing`() = runTest {
+    fun `FromCache NEVER + 3 parallel + cancel + again = Receive from the same ongoing`() = runTest(testDispatcher) {
         var collected1 = -1
         var collected2 = -1
         var collected3 = -1
@@ -232,7 +239,7 @@ internal class CachedSourceTest {
                 delay(50.milliseconds) // Delay to allow several requests attach to the same ongoing
                 sourceInvocationCnt.incrementAndGet()
             },
-            dispatcher = getTestDispatcher(),
+            dispatcher = testDispatcher,
         )
 
         action {
@@ -280,7 +287,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache NEVER + 3 parallel + 3 parallel = First 3 receive from 1st ongoing + Second 3 receive from 2nd ongoing`() = runTest {
+    fun `FromCache NEVER + 3 parallel + 3 parallel = First 3 receive from 1st ongoing + Second 3 receive from 2nd ongoing`() = runTest(testDispatcher) {
         var collected1 = -1
         var collected2 = -1
         var collected3 = -1
@@ -293,7 +300,7 @@ internal class CachedSourceTest {
                 delay(50.milliseconds) // Delay to allow several requests attach to the same ongoing
                 sourceInvocationCnt.incrementAndGet()
             },
-            dispatcher = getTestDispatcher(),
+            dispatcher = testDispatcher,
         )
 
         action {
@@ -341,7 +348,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache IF_FAILED + 1 success = Get not from cache`() = runTest {
+    fun `FromCache IF_FAILED + 1 success = Get not from cache`() = runTest(testDispatcher) {
         var collected: CachedSourceResult<Int>? = null
         val source = CachedSource<Unit, Int>(source = { 1 })
 
@@ -358,7 +365,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache IF_FAILED + 1 failure = Catch exception`() = runTest {
+    fun `FromCache IF_FAILED + 1 failure = Catch exception`() = runTest(testDispatcher) {
         var collected = -1
         var caught = false
         val source = CachedSource<Unit, Int>(source = { throw RuntimeException() })
@@ -377,7 +384,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache IF_FAILED + 1 success + 1 failure = Get cached`() = runTest {
+    fun `FromCache IF_FAILED + 1 success + 1 failure = Get cached`() = runTest(testDispatcher) {
         var collected: CachedSourceResult<Int>? = null
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(source = {
@@ -403,7 +410,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache IF_HAVE + 1 failure = Catch exception`() = runTest {
+    fun `FromCache IF_HAVE + 1 failure = Catch exception`() = runTest(testDispatcher) {
         var collected = -1
         var caught = false
         val source = CachedSource<Unit, Int>(source = { throw RuntimeException() })
@@ -422,7 +429,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache IF_HAVE + 1 success + 1 failure = Get cached`() = runTest {
+    fun `FromCache IF_HAVE + 1 success + 1 failure = Get cached`() = runTest(testDispatcher) {
         var collected: CachedSourceResult<Int>? = null
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(source = {
@@ -448,7 +455,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache IF_HAVE + 1 success + 1 failure + create flows at the same time = Get cached + laziness works`() = runTest {
+    fun `FromCache IF_HAVE + 1 success + 1 failure + create flows at the same time = Get cached + laziness works`() = runTest(testDispatcher) {
         var collected = -1
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(
@@ -460,7 +467,7 @@ internal class CachedSourceTest {
                     throw RuntimeException()
                 }
             },
-            dispatcher = getTestDispatcher(),
+            dispatcher = testDispatcher,
         )
 
         action {
@@ -477,7 +484,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache IF_HAVE + 1 success + 1 in parallel + 1 failure = Get cached`() = runTest {
+    fun `FromCache IF_HAVE + 1 success + 1 in parallel + 1 failure = Get cached`() = runTest(testDispatcher) {
         var collected1: CachedSourceResult<Int>? = null
         var collected2: CachedSourceResult<Int>? = null
         var collected3: CachedSourceResult<Int>? = null
@@ -492,7 +499,7 @@ internal class CachedSourceTest {
                 }
             },
             timeProvider = zeroTimeProvider(),
-            dispatcher = getTestDispatcher(),
+            dispatcher = testDispatcher,
         )
 
         action {
@@ -519,7 +526,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache CACHE_THEN_LOAD + 1 success + 1 success = Get cached + load`() = runTest {
+    fun `FromCache CACHE_THEN_LOAD + 1 success + 1 success = Get cached + load`() = runTest(testDispatcher) {
         val collected = mutableListOf<CachedSourceResult<Int>>()
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<Unit, Int>(
@@ -546,7 +553,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache CACHED_THEN_LOAD + 1 success + 1 failure = Get cached + catch`() = runTest {
+    fun `FromCache CACHED_THEN_LOAD + 1 success + 1 failure = Get cached + catch`() = runTest(testDispatcher) {
         val collected = mutableListOf<Int>()
         var caught = false
         val sourceInvocationCnt = AtomicInteger()
@@ -574,7 +581,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache CACHED_THEN_LOAD + 1 success + 1 failure + again = Get cached + catch + cached + load`() = runTest {
+    fun `FromCache CACHED_THEN_LOAD + 1 success + 1 failure + again = Get cached + catch + cached + load`() = runTest(testDispatcher) {
         val collected1 = mutableListOf<CachedSourceResult<Int>>()
         val collected2 = mutableListOf<CachedSourceResult<Int>>()
         var caught1 = false
@@ -618,7 +625,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache CACHED_THEN_LOAD + no cache + 1 success = Load`() = runTest {
+    fun `FromCache CACHED_THEN_LOAD + no cache + 1 success = Load`() = runTest(testDispatcher) {
         val collected = mutableListOf<Int>()
         var caught = false
         val sourceInvocationCnt = AtomicInteger()
@@ -644,7 +651,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache CACHED_THEN_LOAD + no cache + success + failure + success = Load + catch + cache + load`() = runTest {
+    fun `FromCache CACHED_THEN_LOAD + no cache + success + failure + success = Load + catch + cache + load`() = runTest(testDispatcher) {
         val collected1 = mutableListOf<Int>()
         val collected2 = mutableListOf<Int>()
         val collected3 = mutableListOf<Int>()
@@ -685,7 +692,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache NEVER + load + cancel + load = Loading cancelled + load`() = runTest {
+    fun `FromCache NEVER + load + cancel + load = Loading cancelled + load`() = runTest(testDispatcher) {
         val collected1 = mutableListOf<CachedSourceResult<Int>>()
         val collected2 = mutableListOf<CachedSourceResult<Int>>()
         val sourceInvocationCnt = AtomicInteger()
@@ -695,7 +702,7 @@ internal class CachedSourceTest {
                 sourceInvocationCnt.incrementAndGet()
             },
             timeProvider = zeroTimeProvider(),
-            dispatcher = getTestDispatcher(),
+            dispatcher = testDispatcher,
         )
 
         action {
@@ -718,7 +725,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache NEVER + load + cancel + load another param = No ongoings`() = runTest {
+    fun `FromCache NEVER + load + cancel + load another param = No ongoings`() = runTest(testDispatcher) {
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<String, Int>(
             source = {
@@ -726,7 +733,7 @@ internal class CachedSourceTest {
                 sourceInvocationCnt.incrementAndGet()
             },
             timeProvider = zeroTimeProvider(),
-            dispatcher = getTestDispatcher(),
+            dispatcher = testDispatcher,
         )
 
         action {
@@ -747,7 +754,7 @@ internal class CachedSourceTest {
     }
 
     @Test
-    fun `FromCache IF_HAVE + 1 success + clear + 1 success = Get cached + load`() = runTest {
+    fun `FromCache IF_HAVE + 1 success + clear + 1 success = Get cached + load`() = runTest(testDispatcher) {
         var collected1: CachedSourceResult<Int>? = null
         var collected2: CachedSourceResult<Int>? = null
         val sourceInvocationCnt = AtomicInteger()
