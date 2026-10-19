@@ -1,12 +1,23 @@
 package crocodile8.universal_cache.request
 
 import crocodile8.universal_cache.UniversalCache
-import crocodile8.universal_cache.test_utils.*
+import crocodile8.universal_cache.test_utils.AtomicInteger
+import crocodile8.universal_cache.test_utils.action
+import crocodile8.universal_cache.test_utils.assert
+import crocodile8.universal_cache.test_utils.assertNoOngoings
+import crocodile8.universal_cache.test_utils.getTestDispatcher
+import crocodile8.universal_cache.test_utils.result
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertIs
 import kotlin.time.Duration.Companion.milliseconds
 
 internal class RequesterTest {
@@ -147,6 +158,150 @@ internal class RequesterTest {
         result {
             sourceInvocationCnt["1"] assert 2
             sourceInvocationCnt["2"] assert 1
+            requester.assertNoOngoings()
+        }
+    }
+
+    @Test
+    fun `Collect + fail + collect + cancel + collect twice = The last 2 successful + same`() = runTest {
+        val sourceInvocationCnt = AtomicInteger()
+        var exceptionCaught = false
+        var secondCompletion: Throwable? = null
+        var result1 = ""
+        var result2 = ""
+        val requester = Requester<String, String>(source = {
+            delay(100.milliseconds)
+            when (val cnt = sourceInvocationCnt.incrementAndGet()) {
+                1 -> throw RuntimeException("Test exception")
+                else -> "param_$it->result_$cnt"
+            }
+        })
+        val flow = requester.requestShared("1", dispatcher = getTestDispatcher())
+
+        action {
+            flow
+                .catch { exceptionCaught = true }
+                .collect {}
+
+            coroutineScope {
+                val l = launch {
+                    flow
+                        .onCompletion { secondCompletion = it }
+                        .collect {}
+                }
+                delay(10.milliseconds)
+                l.cancel()
+            }
+
+            coroutineScope {
+                launch { flow.collect { result1 = it } }
+                launch { flow.collect { result2 = it } }
+            }
+        }
+
+        result {
+            exceptionCaught assert true
+            assertIs<CancellationException>(secondCompletion)
+            result1 assert "param_1->result_2"
+            result2 assert "param_1->result_2"
+            requester.assertNoOngoings()
+        }
+    }
+
+    @Test
+    fun `Collect + fail + collect + cancel + collect twice = The last 2 successful + same v2`() = runTest {
+        val sourceInvocationCnt = AtomicInteger()
+        var exceptionCaught = false
+        var secondCompletion: Throwable? = null
+        var result1 = ""
+        var result2 = ""
+        val requester = Requester<String, String>(source = {
+            delay(100.milliseconds)
+            when (val cnt = sourceInvocationCnt.incrementAndGet()) {
+                1 -> throw RuntimeException("Test exception")
+                else -> "param_$it->result_$cnt"
+            }
+        })
+
+        action {
+            requester.requestShared("1", dispatcher = getTestDispatcher())
+                .catch { exceptionCaught = true }
+                .collect {}
+
+            coroutineScope {
+                val l = launch {
+                    requester.requestShared("1", dispatcher = getTestDispatcher())
+                        .onCompletion { secondCompletion = it }
+                        .collect {}
+                }
+                delay(10.milliseconds)
+                l.cancel()
+            }
+
+            coroutineScope {
+                launch {
+                    requester.requestShared("1", dispatcher = getTestDispatcher())
+                        .collect { result1 = it }
+                }
+                launch {
+                    requester.requestShared("1", dispatcher = getTestDispatcher())
+                        .collect { result2 = it }
+                }
+            }
+        }
+
+        result {
+            exceptionCaught assert true
+            assertIs<CancellationException>(secondCompletion)
+            result1 assert "param_1->result_2"
+            result2 assert "param_1->result_2"
+            requester.assertNoOngoings()
+        }
+    }
+
+    @Test
+    fun `Collect + fail + collect + cancel + collect twice different params = The last 2 successful + different`() = runTest {
+        val sourceInvocationCnt = AtomicInteger()
+        var exceptionCaught = false
+        var secondCompletion: Throwable? = null
+        var result1 = ""
+        var result2 = ""
+        val requester = Requester<String, String>(source = {
+            delay(100.milliseconds)
+            when (val cnt = sourceInvocationCnt.incrementAndGet()) {
+                1 -> throw RuntimeException("Test exception")
+                else -> "param_$it->result_$cnt"
+            }
+        })
+        val flow1 = requester.requestShared("1", dispatcher = getTestDispatcher())
+        val flow2 = requester.requestShared("2", dispatcher = getTestDispatcher())
+
+        action {
+            flow1
+                .catch { exceptionCaught = true }
+                .collect {}
+
+            coroutineScope {
+                val l = launch {
+                    flow1
+                        .onCompletion { secondCompletion = it }
+                        .collect {}
+                }
+                delay(10.milliseconds)
+                l.cancel()
+            }
+
+            coroutineScope {
+                launch { flow1.collect { result1 = it } }
+                launch { flow2.collect { result2 = it } }
+            }
+        }
+
+        result {
+            exceptionCaught assert true
+            assertIs<CancellationException>(secondCompletion)
+            result1 assert "param_1->result_2"
+            result2 assert "param_2->result_3"
             requester.assertNoOngoings()
         }
     }
