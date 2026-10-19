@@ -4,8 +4,6 @@ import crocodile8.universal_cache.CachedSource
 import crocodile8.universal_cache.CachedSourceResult
 import crocodile8.universal_cache.request.Requester
 import crocodile8.universal_cache.time.TimeProvider
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.test.TestScope
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -77,7 +75,3 @@ infix fun Boolean?.assert(expected: Boolean) {
 infix fun <T : Any> CachedSourceResult<T>?.assert(another: CachedSourceResult<T>) {
     assertEquals(another, this)
 }
-
-@OptIn(ExperimentalStdlibApi::class)
-fun TestScope.getTestDispatcher() =
-    coroutineContext[CoroutineDispatcher.Key] as CoroutineDispatcher

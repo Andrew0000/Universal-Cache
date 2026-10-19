@@ -1,14 +1,22 @@
 package crocodile8.universal_cache
 
-import crocodile8.universal_cache.test_utils.*
+import crocodile8.universal_cache.test_utils.AtomicInteger
+import crocodile8.universal_cache.test_utils.TestUtils
+import crocodile8.universal_cache.test_utils.action
+import crocodile8.universal_cache.test_utils.assertAnyOrder
+import crocodile8.universal_cache.test_utils.assertNoOngoings
+import crocodile8.universal_cache.test_utils.result
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 class CachedSourceUpdatesTest {
+
+    private val testDispatcher = StandardTestDispatcher()
 
     @BeforeTest
     fun setUp() {
@@ -16,7 +24,7 @@ class CachedSourceUpdatesTest {
     }
 
     @Test
-    fun `FromCache NEVER = Updates are collected`() = runTest {
+    fun `FromCache NEVER = Updates are collected`() = runTest(testDispatcher) {
         val collectedUpdates = mutableListOf<Int>()
         val (source, _) = TestUtils.createStringIntSource()
 
@@ -39,7 +47,7 @@ class CachedSourceUpdatesTest {
     }
 
     @Test
-    fun `FromCache IF_HAVE = Updates are collected`() = runTest {
+    fun `FromCache IF_HAVE = Updates are collected`() = runTest(testDispatcher) {
         val collectedUpdates = mutableListOf<Int>()
         val (source, _) = TestUtils.createStringIntSource()
 
@@ -62,7 +70,7 @@ class CachedSourceUpdatesTest {
     }
 
     @Test
-    fun `FromCache NEVER + multiple success + errors = Updates and errors are collected`() = runTest {
+    fun `FromCache NEVER + multiple success + errors = Updates and errors are collected`() = runTest(testDispatcher) {
         val collectedUpdates = mutableListOf<Int>()
         val collectedErrors = mutableListOf<Throwable>()
         val sourceInvocationCnt = AtomicInteger()

@@ -5,7 +5,6 @@ import crocodile8.universal_cache.test_utils.AtomicInteger
 import crocodile8.universal_cache.test_utils.action
 import crocodile8.universal_cache.test_utils.assert
 import crocodile8.universal_cache.test_utils.assertNoOngoings
-import crocodile8.universal_cache.test_utils.getTestDispatcher
 import crocodile8.universal_cache.test_utils.result
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -13,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.BeforeTest
@@ -22,13 +22,15 @@ import kotlin.time.Duration.Companion.milliseconds
 
 internal class RequesterTest {
 
+    private val testDispatcher = StandardTestDispatcher()
+
     @BeforeTest
     fun setUp() {
         UniversalCache.printLogs = true
     }
 
     @Test
-    fun `1 collect + wait + 2 collect in parallel = 2 real requests`() = runTest {
+    fun `1 collect + wait + 2 collect in parallel = 2 real requests`() = runTest(testDispatcher) {
         val sourceInvocationCnt = AtomicInteger()
         val requester = Requester<String, Int>(source = {
             delay(100.milliseconds)
@@ -37,14 +39,14 @@ internal class RequesterTest {
 
         action {
             val a1 = async {
-                requester.requestShared("1", dispatcher = getTestDispatcher()).collect {}
+                requester.requestShared("1", dispatcher = testDispatcher).collect {}
             }
             a1.await()
             val a2 = async {
-                requester.requestShared("1", dispatcher = getTestDispatcher()).collect {}
+                requester.requestShared("1", dispatcher = testDispatcher).collect {}
             }
             val a3 = async {
-                requester.requestShared("1", dispatcher = getTestDispatcher()).collect {}
+                requester.requestShared("1", dispatcher = testDispatcher).collect {}
             }
             a2.await()
             a3.await()
@@ -57,13 +59,13 @@ internal class RequesterTest {
     }
 
     @Test
-    fun `1 collect + wait + 2 collect in parallel + 1 flow instance = 2 real requests`() = runTest {
+    fun `1 collect + wait + 2 collect in parallel + 1 flow instance = 2 real requests`() = runTest(testDispatcher) {
         val sourceInvocationCnt = AtomicInteger()
         val requester = Requester<String, Int>(source = {
             delay(100.milliseconds)
             sourceInvocationCnt.incrementAndGet()
         })
-        val flow = requester.requestShared("1", dispatcher = getTestDispatcher())
+        val flow = requester.requestShared("1", dispatcher = testDispatcher)
 
         action {
             val a1 = async {
@@ -87,7 +89,7 @@ internal class RequesterTest {
     }
 
     @Test
-    fun `1 collect + wait + 3 collect in parallel with different params = 2 + 1 real requests`() = runTest {
+    fun `1 collect + wait + 3 collect in parallel with different params = 2 + 1 real requests`() = runTest(testDispatcher) {
         val sourceInvocationCnt = mapOf(
             "1" to AtomicInteger(),
             "2" to AtomicInteger(),
@@ -99,17 +101,17 @@ internal class RequesterTest {
 
         action {
             val a1 = async {
-                requester.requestShared("1", dispatcher = getTestDispatcher()).collect {}
+                requester.requestShared("1", dispatcher = testDispatcher).collect {}
             }
             a1.await()
             val a2 = async {
-                requester.requestShared("1", dispatcher = getTestDispatcher()).collect {}
+                requester.requestShared("1", dispatcher = testDispatcher).collect {}
             }
             val a3 = async {
-                requester.requestShared("2", dispatcher = getTestDispatcher()).collect {}
+                requester.requestShared("2", dispatcher = testDispatcher).collect {}
             }
             val a4 = async {
-                requester.requestShared("1", dispatcher = getTestDispatcher()).collect {}
+                requester.requestShared("1", dispatcher = testDispatcher).collect {}
             }
             a2.await()
             a3.await()
@@ -124,7 +126,7 @@ internal class RequesterTest {
     }
 
     @Test
-    fun `1 collect + wait + 3 collect in parallel with different params + 2 flow instances = 2 + 1 real requests`() = runTest {
+    fun `1 collect + wait + 3 collect in parallel with different params + 2 flow instances = 2 + 1 real requests`() = runTest(testDispatcher) {
         val sourceInvocationCnt = mapOf(
             "1" to AtomicInteger(),
             "2" to AtomicInteger(),
@@ -133,8 +135,8 @@ internal class RequesterTest {
             delay(100.milliseconds)
             sourceInvocationCnt[it]!!.incrementAndGet()
         })
-        val flow1 = requester.requestShared("1", dispatcher = getTestDispatcher())
-        val flow2 = requester.requestShared("2", dispatcher = getTestDispatcher())
+        val flow1 = requester.requestShared("1", dispatcher = testDispatcher)
+        val flow2 = requester.requestShared("2", dispatcher = testDispatcher)
 
         action {
             val a1 = async {
@@ -163,7 +165,7 @@ internal class RequesterTest {
     }
 
     @Test
-    fun `Collect + fail + collect + cancel + collect twice = The last 2 successful + same`() = runTest {
+    fun `Collect + fail + collect + cancel + collect twice = The last 2 successful + same`() = runTest(testDispatcher) {
         val sourceInvocationCnt = AtomicInteger()
         var exceptionCaught = false
         var secondCompletion: Throwable? = null
@@ -176,7 +178,7 @@ internal class RequesterTest {
                 else -> "param_$it->result_$cnt"
             }
         })
-        val flow = requester.requestShared("1", dispatcher = getTestDispatcher())
+        val flow = requester.requestShared("1", dispatcher = testDispatcher)
 
         action {
             flow
@@ -209,7 +211,7 @@ internal class RequesterTest {
     }
 
     @Test
-    fun `Collect + fail + collect + cancel + collect twice = The last 2 successful + same v2`() = runTest {
+    fun `Collect + fail + collect + cancel + collect twice = The last 2 successful + same v2`() = runTest(testDispatcher) {
         val sourceInvocationCnt = AtomicInteger()
         var exceptionCaught = false
         var secondCompletion: Throwable? = null
@@ -224,13 +226,13 @@ internal class RequesterTest {
         })
 
         action {
-            requester.requestShared("1", dispatcher = getTestDispatcher())
+            requester.requestShared("1", dispatcher = testDispatcher)
                 .catch { exceptionCaught = true }
                 .collect {}
 
             coroutineScope {
                 val l = launch {
-                    requester.requestShared("1", dispatcher = getTestDispatcher())
+                    requester.requestShared("1", dispatcher = testDispatcher)
                         .onCompletion { secondCompletion = it }
                         .collect {}
                 }
@@ -240,11 +242,11 @@ internal class RequesterTest {
 
             coroutineScope {
                 launch {
-                    requester.requestShared("1", dispatcher = getTestDispatcher())
+                    requester.requestShared("1", dispatcher = testDispatcher)
                         .collect { result1 = it }
                 }
                 launch {
-                    requester.requestShared("1", dispatcher = getTestDispatcher())
+                    requester.requestShared("1", dispatcher = testDispatcher)
                         .collect { result2 = it }
                 }
             }
@@ -260,7 +262,7 @@ internal class RequesterTest {
     }
 
     @Test
-    fun `Collect + fail + collect + cancel + collect twice different params = The last 2 successful + different`() = runTest {
+    fun `Collect + fail + collect + cancel + collect twice different params = The last 2 successful + different`() = runTest(testDispatcher) {
         val sourceInvocationCnt = AtomicInteger()
         var exceptionCaught = false
         var secondCompletion: Throwable? = null
@@ -273,8 +275,8 @@ internal class RequesterTest {
                 else -> "param_$it->result_$cnt"
             }
         })
-        val flow1 = requester.requestShared("1", dispatcher = getTestDispatcher())
-        val flow2 = requester.requestShared("2", dispatcher = getTestDispatcher())
+        val flow1 = requester.requestShared("1", dispatcher = testDispatcher)
+        val flow2 = requester.requestShared("2", dispatcher = testDispatcher)
 
         action {
             flow1
