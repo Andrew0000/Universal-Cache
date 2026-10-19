@@ -1,15 +1,17 @@
 package crocodile8.universal_cache
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.flow.retry
-import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.launch
 
-suspend fun <P : Any, T : Any> CachedSource<P, T>.getOrRequest(
+fun <P : Any, T : Any> CachedSource<P, T>.getOrRequest(
     params: P,
     fromCachePredicate: (cached: CachedSourceResult<T>) -> Boolean,
 ): Flow<T> =
@@ -27,25 +29,20 @@ suspend fun <P : Any, T : Any> CachedSource<P, T>.getOrRequest(
             }
     }
 
-suspend fun <P : Any, T : Any> CachedSource<P, T>.observeAndRequest(
+fun <P : Any, T : Any> CachedSource<P, T>.observeAndRequest(
     params: P,
     requestRetryCount: Long = 2,
 ): Flow<T> =
-    flow {
-        emitAll(
-            merge(
-                updates
-                    .filter { it.first == params }
-                    .map { it.second.value },
-
-                get(params, FromCache.NEVER)
-                    .retry(requestRetryCount)
-                    .take(1)
-                    // Don't emit from this stream because all updates are emitted from .updates anyway.
-                    // The downside: a value from .updates (from another parallel request)
-                    // can arrive before this request.
-                    // More complex solution is needed to solve this behaviour.
-                    .filter { false },
-            )
-        )
+    channelFlow {
+        val subscribed = CompletableDeferred<Unit>()
+        launch {
+            updates
+                .onSubscription { subscribed.complete(Unit) }
+                .filter { it.first == params }
+                .collect { send(it.second.value) }
+        }
+        subscribed.await()
+        get(params, FromCache.NEVER)
+            .retry(requestRetryCount)
+            .collect { /* delivered via `updates` */ }
     }

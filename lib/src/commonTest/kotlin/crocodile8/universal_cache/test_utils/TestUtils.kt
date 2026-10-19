@@ -10,6 +10,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 
 object TestUtils {
 
@@ -36,6 +37,7 @@ fun runRepeatedTest(
     repeat(times) {
         runTest(
             context = context,
+            timeout = 30.seconds,
             testBody = testBody,
         )
     }
