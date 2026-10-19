@@ -179,6 +179,106 @@ internal class CachedSourceTest {
     }
 
     @Test
+    fun `FromCache NEVER + 3 parallel + cancel = Nothing received`() = runTest {
+        var collected1 = -1
+        var collected2 = -1
+        var collected3 = -1
+        val sourceInvocationCnt = AtomicInteger()
+        val source = CachedSource<Unit, Int>(
+            source = {
+                delay(50) // Delay to allow several requests attach to the same ongoing
+                sourceInvocationCnt.incrementAndGet()
+            },
+            dispatcher = getTestDispatcher(),
+        )
+
+        action {
+            val a1 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected1 = it }
+            }
+            val a2 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected2 = it }
+            }
+            val a3 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected3 = it }
+            }
+            delay(10)
+            a1.cancel()
+            a2.cancel()
+            a3.cancel()
+            delay(100)
+        }
+
+        result {
+            collected1 assert -1
+            collected2 assert -1
+            collected3 assert -1
+            source.assertNoOngoings()
+        }
+    }
+
+    @Test
+    fun `FromCache NEVER + 3 parallel + cancel + again = Receive from the same ongoing`() = runTest {
+        var collected1 = -1
+        var collected2 = -1
+        var collected3 = -1
+        val sourceInvocationCnt = AtomicInteger()
+        val source = CachedSource<Unit, Int>(
+            source = {
+                delay(50) // Delay to allow several requests attach to the same ongoing
+                sourceInvocationCnt.incrementAndGet()
+            },
+            dispatcher = getTestDispatcher(),
+        )
+
+        action {
+            val a1 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected1 = it }
+            }
+            val a2 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected2 = it }
+            }
+            val a3 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected3 = it }
+            }
+            delay(10)
+            a1.cancel()
+            a2.cancel()
+            a3.cancel()
+            delay(100)
+
+            val a4 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected1 = it }
+            }
+            val a5 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected2 = it }
+            }
+            val a6 = async {
+                source.get(Unit, fromCache = FromCache.NEVER)
+                    .collect { collected3 = it }
+            }
+            a4.await()
+            a5.await()
+            a6.await()
+        }
+
+        result {
+            collected1 assert 1
+            collected2 assert 1
+            collected3 assert 1
+            source.assertNoOngoings()
+        }
+    }
+
+    @Test
     fun `FromCache NEVER + 3 parallel + 3 parallel = First 3 receive from 1st ongoing + Second 3 receive from 2nd ongoing`() = runTest {
         var collected1 = -1
         var collected2 = -1
