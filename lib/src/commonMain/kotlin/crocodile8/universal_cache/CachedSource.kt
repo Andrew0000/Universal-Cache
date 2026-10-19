@@ -7,6 +7,7 @@ import crocodile8.universal_cache.request.Requester
 import crocodile8.universal_cache.time.SystemTimeProvider
 import crocodile8.universal_cache.time.TimeProvider
 import crocodile8.universal_cache.utils.Logger
+import crocodile8.universal_cache.utils.NoCacheException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -124,7 +125,7 @@ class CachedSource<P : Any, T : Any>(
                     if (cached != null) {
                         flow { emit(CachedSourceResult(cached.value, fromCache = true, originTimeStamp = cached.time)) }
                     } else {
-                        flow { throw NullPointerException("Cache is empty") }
+                        flow { throw NoCacheException() }
                     }
                 }
 
