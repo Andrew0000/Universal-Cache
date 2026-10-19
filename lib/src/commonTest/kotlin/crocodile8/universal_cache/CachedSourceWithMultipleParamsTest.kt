@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.milliseconds
 
 internal class CachedSourceWithMultipleParamsTest {
 
@@ -39,7 +40,7 @@ internal class CachedSourceWithMultipleParamsTest {
         var collected3 = -1
         val source = CachedSource<String, Int>(
             source = {
-                delay(100)
+                delay(100.milliseconds)
                 it.toInt()
             },
             dispatcher = getTestDispatcher(),
@@ -82,7 +83,7 @@ internal class CachedSourceWithMultipleParamsTest {
         val sourceInvocationCnt = listOf(AtomicInteger(), AtomicInteger(1), AtomicInteger(2), AtomicInteger(3))
         val source = CachedSource<String, Int>(
             source = {
-                delay(200)
+                delay(200.milliseconds)
                 sourceInvocationCnt[it.toInt() - 1].incrementAndGet()
             },
             dispatcher = getTestDispatcher(),
@@ -260,7 +261,7 @@ internal class CachedSourceWithMultipleParamsTest {
         val sourceInvocationCnt = AtomicInteger()
         val source = CachedSource<String, Int>(
             source = {
-                delay(200)
+                delay(200.milliseconds)
                 if (sourceInvocationCnt.incrementAndGet() == 1) {
                     1
                 } else {
