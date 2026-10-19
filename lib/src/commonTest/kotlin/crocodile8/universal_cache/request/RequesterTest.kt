@@ -6,6 +6,7 @@ import crocodile8.universal_cache.test_utils.action
 import crocodile8.universal_cache.test_utils.assert
 import crocodile8.universal_cache.test_utils.assertNoOngoings
 import crocodile8.universal_cache.test_utils.result
+import crocodile8.universal_cache.test_utils.runRepeatedTest
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -13,7 +14,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.runTest
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -30,7 +30,7 @@ internal class RequesterTest {
     }
 
     @Test
-    fun `1 collect + wait + 2 collect in parallel = 2 real requests`() = runTest(testDispatcher) {
+    fun `1 collect + wait + 2 collect in parallel = 2 real requests`() = runRepeatedTest(testDispatcher) {
         val sourceInvocationCnt = AtomicInteger()
         val requester = Requester<String, Int>(source = {
             delay(100.milliseconds)
@@ -59,7 +59,7 @@ internal class RequesterTest {
     }
 
     @Test
-    fun `1 collect + wait + 2 collect in parallel + 1 flow instance = 2 real requests`() = runTest(testDispatcher) {
+    fun `1 collect + wait + 2 collect in parallel + 1 flow instance = 2 real requests`() = runRepeatedTest(testDispatcher) {
         val sourceInvocationCnt = AtomicInteger()
         val requester = Requester<String, Int>(source = {
             delay(100.milliseconds)
@@ -89,7 +89,7 @@ internal class RequesterTest {
     }
 
     @Test
-    fun `1 collect + wait + 3 collect in parallel with different params = 2 + 1 real requests`() = runTest(testDispatcher) {
+    fun `1 collect + wait + 3 collect in parallel with different params = 2 + 1 real requests`() = runRepeatedTest(testDispatcher) {
         val sourceInvocationCnt = mapOf(
             "1" to AtomicInteger(),
             "2" to AtomicInteger(),
@@ -126,7 +126,7 @@ internal class RequesterTest {
     }
 
     @Test
-    fun `1 collect + wait + 3 collect in parallel with different params + 2 flow instances = 2 + 1 real requests`() = runTest(testDispatcher) {
+    fun `1 collect + wait + 3 collect in parallel with different params + 2 flow instances = 2 + 1 real requests`() = runRepeatedTest(testDispatcher) {
         val sourceInvocationCnt = mapOf(
             "1" to AtomicInteger(),
             "2" to AtomicInteger(),
@@ -165,7 +165,7 @@ internal class RequesterTest {
     }
 
     @Test
-    fun `Collect + fail + collect + cancel + collect twice = The last 2 successful + same`() = runTest(testDispatcher) {
+    fun `Collect + fail + collect + cancel + collect twice = The last 2 successful + same`() = runRepeatedTest(testDispatcher) {
         val sourceInvocationCnt = AtomicInteger()
         var exceptionCaught = false
         var secondCompletion: Throwable? = null
@@ -211,7 +211,7 @@ internal class RequesterTest {
     }
 
     @Test
-    fun `Collect + fail + collect + cancel + collect twice = The last 2 successful + same v2`() = runTest(testDispatcher) {
+    fun `Collect + fail + collect + cancel + collect twice = The last 2 successful + same v2`() = runRepeatedTest(testDispatcher) {
         val sourceInvocationCnt = AtomicInteger()
         var exceptionCaught = false
         var secondCompletion: Throwable? = null
@@ -262,7 +262,7 @@ internal class RequesterTest {
     }
 
     @Test
-    fun `Collect + fail + collect + cancel + collect twice different params = The last 2 successful + different`() = runTest(testDispatcher) {
+    fun `Collect + fail + collect + cancel + collect twice different params = The last 2 successful + different`() = runRepeatedTest(testDispatcher) {
         val sourceInvocationCnt = AtomicInteger()
         var exceptionCaught = false
         var secondCompletion: Throwable? = null

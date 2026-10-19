@@ -4,6 +4,10 @@ import crocodile8.universal_cache.CachedSource
 import crocodile8.universal_cache.CachedSourceResult
 import crocodile8.universal_cache.request.Requester
 import crocodile8.universal_cache.time.TimeProvider
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -21,6 +25,19 @@ object TestUtils {
 
     fun zeroTimeProvider() = object : TimeProvider {
         override fun get(): Long = 0L
+    }
+}
+
+fun runRepeatedTest(
+    context: CoroutineContext = EmptyCoroutineContext,
+    times: Int = 2_000,
+    testBody: suspend TestScope.() -> Unit,
+) {
+    repeat(times) {
+        runTest(
+            context = context,
+            testBody = testBody,
+        )
     }
 }
 
